@@ -1,0 +1,5 @@
+__pycache__/
+.vscode/
+channel_data.json
+credentials.json
+pirulla_plot.png
