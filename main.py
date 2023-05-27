@@ -251,9 +251,9 @@ def get_wait_time():
 
 def main():
     channel_url = "https://www.youtube.com/channel/UCdGpd0gNn38UKwoncZd9rmA"
-    channel = Channel(channel_url)
 
     while True:
+        channel = Channel(channel_url)
         last_stats = get_last_stats()
         average_time = get_average_time(channel)
         last_video = list(channel.videos)[0]
