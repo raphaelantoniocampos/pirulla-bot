@@ -2,7 +2,7 @@ import json
 from pytube import Channel
 
 
-def generate_channel_data(channel):
+def generate_channel_data(channel : Channel):
     """
     Generates all data for a channel.
 
