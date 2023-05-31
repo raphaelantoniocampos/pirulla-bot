@@ -2,7 +2,7 @@ import json
 from pytube import Channel
 
 
-def generate_channel_data(channel):
+def generate_channel_data(channel : Channel):
     """
     Generates all data for a channel.
 
@@ -28,8 +28,8 @@ def generate_channel_data(channel):
         averages.append(average_data)
 
     filename = "channel_data.json"
-    with open(filename, "w") as f:
-        json.dump(averages, f)
+    with open(filename, "w") as file:
+        json.dump(averages, file)
 
 
 channel_url = "https://www.youtube.com/channel/UCdGpd0gNn38UKwoncZd9rmA"
