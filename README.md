@@ -29,7 +29,7 @@ python3 main.py
 ```
 
 ## 📦 Usage
-The tracker will run indefinitely, checking for updates to the Pirulla YouTube channel every 5-15 minutes. When there are changes in the average length, the tracker will post an update to Twitter.
+The tracker will run indefinitely, checking for updates to the Pirulla YouTube channel every 30-60 minutes. When there are changes in the average length, the tracker will post an update to Twitter.
 
 ## 🖇️ Contributing
 If you would like to contribute to this project, please feel free to open an issue or pull request.

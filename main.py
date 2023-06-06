@@ -125,7 +125,7 @@ def get_average_time(channel):
         The average Pirulla time in seconds.
     """
 
-    print("Verifying channel.")
+    print("Getting new average time.")
     videos = list(channel.videos)
     if not videos:
         return 0
@@ -184,6 +184,7 @@ def save_stats(stats):
     Args:
         data: The data to save.
     """
+    print("Saving new stats.")
     filename = "channel_data.json"
     with open(filename, "r") as f:
         content = json.load(f)
@@ -243,41 +244,47 @@ def get_wait_time():
     Returns a random wait time.
 
     Returns:
-        Between 5 and 15 minutes in seconds;
+        Between 30 and 60 minutes in seconds;
     """
     minute = 60
-    return randint(5 * minute, 15 * minute)
+    return randint(30 * minute, 60 * minute)
 
+def recheck():
+    wait_time = get_wait_time()
+    print(f"Recheck in {format_time(wait_time)}")
+    time.sleep(wait_time)
 
 def main():
     channel_url = "https://www.youtube.com/channel/UCdGpd0gNn38UKwoncZd9rmA"
-
+    checks = 0
     while True:
         channel = Channel(channel_url)
         last_stats = get_last_stats()
-        average_time = get_average_time(channel)
-        last_video = list(channel.videos)[0]
-        last_publish_date = last_video.publish_date
-        last_average = last_stats["Average"]
+        last_posted_video = list(channel.videos)[0]
 
-        stats = {"Date": str(last_publish_date), "Average": average_time}
         # Check if there are any updates
-        if (
-            stats["Date"] == last_stats["Date"]
-            and stats["Average"] == last_stats["Average"]
-        ):
+        if(last_posted_video.video_id == last_stats["Last Video ID"]):
             # No updates
             print("No updates.")
         else:
+            checks += 1
+            print(f"Checking {checks}/2")
+            if (checks < 2):
+                recheck()
+                continue
             # There are updates
-            print("Posting updates.")
+            print("There are updates.")
+            average_time = get_average_time(channel)
+            last_publish_date = last_posted_video.publish_date
+            last_average = last_stats["Average"]
+            current_stats = {"Date": str(last_publish_date), "Last Video ID" : last_posted_video.video_id, "Last Length" : last_posted_video.length, "Average": average_time}
             create_variation_plot()
-            tweet = write_tweet(last_average, average_time, last_video)
+            tweet = write_tweet(last_average, average_time, last_posted_video)
             post_tweet(tweet)
-            save_stats(stats)
-
-        wait_time = get_wait_time()
-        time.sleep(wait_time)
+            save_stats(current_stats)
+            checks = 0
+        
+        recheck()
 
 
 if __name__ == "__main__":
