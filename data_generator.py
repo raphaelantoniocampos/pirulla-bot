@@ -29,7 +29,7 @@ def generate_channel_data(channel : Channel):
                 break
         channel_data.append(data)
 
-    filename = "pirulla-bot/channel_data.json"
+    filename = "channel_data.json"
     with open(filename, "w") as file:
         json.dump(channel_data, file)
 
