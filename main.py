@@ -278,12 +278,13 @@ def main():
             last_publish_date = last_posted_video.publish_date
             last_average = last_stats["Average"]
             current_stats = {"Date": str(last_publish_date), "Last Video ID" : last_posted_video.video_id, "Last Length" : last_posted_video.length, "Average": average_time}
+            save_stats(current_stats)
             create_variation_plot()
             tweet = write_tweet(last_average, average_time, last_posted_video)
             post_tweet(tweet)
             save_stats(current_stats)
             checks = 0
-        
+    
         recheck()
 
 
