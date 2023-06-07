@@ -284,7 +284,7 @@ def main():
             post_tweet(tweet)
             save_stats(current_stats)
             checks = 0
-    
+
         recheck()
 
 
