@@ -4,12 +4,15 @@ import time
 from random import randint
 import json
 
+from result import Result, Ok, Err, is_err
 from matplotlib import pyplot as plt
 from pytube import Channel
 import tweepy
+from shared import channel_url
+from data_generator import generate_channel_data
 
 
-def get_keys():
+def get_keys() -> Result[dict, str]:
     """
     Gets the Twitter API keys and secrets from the credentials.json file.
 
@@ -20,10 +23,12 @@ def get_keys():
     filename = "credentials.json"
     with open(filename) as f:
         keys = json.load(f)
-        return keys
+        if not keys:
+            return Err("Keys not found")
+        return Ok(keys)
 
 
-def write_tweet(last_average, average_time, last_video):
+def write_tweet(last_average, average_time, last_video) -> str:
     """
     Gets the last average and the current average time and returns a formated tweet
 
@@ -161,7 +166,7 @@ def format_time(seconds):
     return formated_time
 
 
-def get_last_stats():
+def get_last_stats() -> Result[dict, str]:
     """
     Gets the last stats from the channel_data.json file.
 
@@ -173,8 +178,12 @@ def get_last_stats():
     filename = "channel_data.json"
     with open(filename) as f:
         content = json.load(f)
+        if not content:
+            return Err("Channel data not found")
         stats = list(content)[-1]
-    return stats
+    if not stats:
+        return Err("Channel data not found")
+    return Ok(stats)
 
 
 def save_stats(stats):
@@ -255,11 +264,12 @@ def recheck():
     time.sleep(wait_time)
 
 def main():
-    channel_url = "https://www.youtube.com/channel/UCdGpd0gNn38UKwoncZd9rmA"
     checks = 0
     while True:
         channel = Channel(channel_url)
         last_stats = get_last_stats()
+        if is_err(last_stats):
+            generate_channel_data(channel)
         last_posted_video = list(channel.videos)[0]
 
         # Check if there are any updates
@@ -281,6 +291,7 @@ def main():
             save_stats(current_stats)
             create_variation_plot()
             tweet = write_tweet(last_average, average_time, last_posted_video)
+            print(tweet)
             post_tweet(tweet)
             save_stats(current_stats)
             checks = 0
