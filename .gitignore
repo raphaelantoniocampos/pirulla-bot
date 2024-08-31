@@ -1,6 +1,7 @@
 __pycache__/
-channel_data.json
+channel_data.csv
 credentials.json
 pirulla_plot.png
 .mypy.ini
 .venv/
+.env
