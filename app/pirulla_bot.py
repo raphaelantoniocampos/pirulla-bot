@@ -1,12 +1,11 @@
 from datetime import datetime
-import time
-from random import randint
 import os
 import logging
 
 from matplotlib import pyplot as plt
 import tweepy
 import pandas as pd
+
 from config import Config
 
 
@@ -15,24 +14,27 @@ class PirullaBot:
         self.logger = logging.getLogger(__name__)
         self.youtube_api = youtube_api
         self.needed_verifications = needed_verifications
+        self.config = Config()
 
     def start(self):
         try:
-            channel_data = pd.read_csv("channel_data.csv", sep=",")
+            channel_data = pd.read_csv("./app/data/channel_data.csv", sep=",")
         except FileNotFoundError:
             channel_data = self.youtube_api.generate_channel_data()
+            if channel_data is None:
+                return
             self.youtube_api.store_data(channel_data)
-            self.wait()
+            self.config.wait(self.logger)
             return
         verifications = 0
         while verifications < self.needed_verifications:
             differences = self.check_for_new_video(channel_data)
             if differences is None:
-                self.wait()
+                self.config.wait(self.logger)
                 return
             verifications += 1
             self.logger.info(f"Seems like there are updates. Verifications: {verifications}/{self.needed_verifications + 1}")
-            self.wait()
+            self.config.wait(self.logger)
             continue
         # There are updates
         self.logger.info(f"There are updates. Verifications: {verifications + 1}/{self.needed_verifications + 1}")
@@ -58,6 +60,9 @@ class PirullaBot:
     def check_for_new_video(self, stored_data):
         latest_video = self.youtube_api.get_latest_video()
 
+        if latest_video is None:
+            return None
+
         if not latest_video.empty:
             new = stored_data.tail(1).compare(other=latest_video)
             if new.empty:
@@ -72,22 +77,6 @@ class PirullaBot:
         if differences.empty:
             return None
         return differences
-
-    def wait(self):
-        wait_time = self.get_wait_time(0, 0)
-        #TODO: increase wait itme
-        self.logger.info(f"Recheck in {self.format_time(wait_time)}")
-        time.sleep(wait_time)
-
-    def get_wait_time(self, min_wait_time, max_wait_time):
-        """
-        Returns a random wait time.
-
-        Returns:
-            Between a period in minutes;
-        """
-        minute = 60
-        return randint(min_wait_time * minute, max_wait_time * minute)
 
     def create_variation_plot(self, channel_data):
         """
@@ -112,7 +101,7 @@ class PirullaBot:
 
         num_ticks_y = 10
         plt.locator_params(axis="y", nbins=num_ticks_y)
-        plt.savefig("pirulla_plot.png", bbox_inches="tight")
+        plt.savefig("./app/data/pirulla_plot.png", bbox_inches="tight")
 
     def write_tweet(self, video_title, video_duration, video_url, last_video_mean, current_mean) -> str:
         """
@@ -129,10 +118,10 @@ class PirullaBot:
         variation_time = self.get_variation_time(last_video_mean, current_mean)
         percentage_variation = self.get_percentage_variation(variation_time, last_video_mean)
 
-        formated_average = self.format_time(current_mean)
-        formated_variation_time = self.format_time(variation_time)
-        formated_percentage_variation = self.format_percentage_variation(percentage_variation)
-        formated_duration = self.format_time(video_duration)
+        formated_average = self.config.format_time(current_mean)
+        formated_variation_time = self.config.format_time(variation_time)
+        formated_percentage_variation = self.config.format_percentage_variation(percentage_variation)
+        formated_duration = self.config.format_time(video_duration)
         up_emoji = "\U0001F4C8"
         down_emoji = "\U0001F4C9"
         underscores = "_" * len(video_title) if video_title >= video_url else "_" * len(video_url)
@@ -159,14 +148,13 @@ Variação {up_emoji if variation_time >= 0 else down_emoji} {formated_percentag
         """
 
         print("Posting tweet.")
-        config = Config()
-        api_key, api_secret, access_token, access_token_secret, bearer_token = config.get_twitter_keys()
+        api_key, api_secret, access_token, access_token_secret, bearer_token = self.config.get_twitter_keys()
 
         auth = tweepy.OAuthHandler(api_key, api_secret)
         auth.set_access_token(access_token, access_token_secret)
         api = tweepy.API(auth)
 
-        path_to_image = os.path.join(os.getcwd(), "", "pirulla_plot.png")
+        path_to_image = os.path.join(os.getcwd(), "", "./app/data/pirulla_plot.png")
         image_path = path_to_image
         media_id = api.media_upload(image_path)
 
@@ -176,30 +164,6 @@ Variação {up_emoji if variation_time >= 0 else down_emoji} {formated_percentag
 
         media_ids = [media_id.media_id]
         client.create_tweet(text=tweet, media_ids=media_ids)
-
-    def format_time(self, seconds):
-        """
-        Formats a number of seconds into a human-readable string.
-
-        Args:
-            seconds: The number of seconds.
-
-        Returns:
-            A human-readable string of the number of seconds.
-        """
-
-        if seconds < 0:
-            seconds *= -1
-        hours = int(seconds // 3600)
-        minutes = int((seconds % 3600) // 60)
-        milliseconds = int((seconds % 1) * 1000)
-        seconds = int(seconds % 60)
-
-        hours_string = f"{hours:02d}h:"
-        minutes_string = f"{minutes:02d}min:"
-        seconds_string = f"{seconds:02d}s:"
-        milliseconds_string = f"{milliseconds:03d}ms"
-        return f"{hours_string if hours != 0 else ''}{minutes_string if minutes != 0 else ''}{seconds_string}{milliseconds_string}"
 
     def get_variation_time(self, last_average, new_average):
         """

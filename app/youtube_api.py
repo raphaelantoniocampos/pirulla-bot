@@ -4,6 +4,7 @@ import logging
 
 import googleapiclient.discovery
 
+from config import Config
 
 class YoutubeAPI:
     def __init__(self, developer_key, channel_id):
@@ -14,37 +15,28 @@ class YoutubeAPI:
         self.api_version = "v3"
         self.channel_id = channel_id
         self.developer_key = developer_key
+        self.config = Config()
         self.youtube = googleapiclient.discovery.build(
             self.api_service_name, self.api_version, developerKey = developer_key)
 
+    def generate_channel_data(self):
+        """
+        Generate all video data for the channel using the Youtube API.
+        """
+
+        self.logger.info("Generating channel data")
+        playlist_id = self.get_uploads_playlist_id()
+        if playlist_id is None:
+            return None
+        videos_ids = self.get_videos_from_playlist(playlist_id)
+        video_details = self.get_video_details(videos_ids)
+        channel_data = self.create_dataframe(video_details)
+
+        return channel_data
+
     def store_data(self, channel_data):
         self.logger.info("Storing channel data")
-        channel_data.to_csv("channel_data.csv", sep=",", index=False)
-
-    def get_latest_video(self):
-        playlist_id = self.get_uploads_playlist_id()
-
-        # Obter o ID do último vídeo da playlist de uploads
-        response = self.youtube.playlistItems().list(
-            part="snippet",
-            playlistId=playlist_id,
-            maxResults=1
-        ).execute()
-
-        if not response['items']:
-            self.logger.info("No video found.")
-            return None
-
-        latest_video_id = response['items'][0]['snippet']['resourceId']['videoId']
-
-        latest_video_details = self.get_video_details([latest_video_id])
-
-        if latest_video_details:
-            latest_video_dataframe = self.create_dataframe(latest_video_details)
-            return latest_video_dataframe
-        else:
-            self.logger.info("Não foi possível obter detalhes do último vídeo.")
-            return None
+        channel_data.to_csv("./app/data/channel_data.csv", sep=",", index=False)
 
     def create_dataframe(self, video_details):
         # Dictionary to store video data
@@ -77,19 +69,6 @@ class YoutubeAPI:
 
         return pd.DataFrame(data=videos_info)
 
-    def generate_channel_data(self):
-        """
-        Generate all video data for the channel using the Youtube API.
-        """
-
-        self.logger.info("Generating channel data")
-        playlist_id = self.get_uploads_playlist_id()
-        videos_ids = self.get_videos_from_playlist(playlist_id)
-        video_details = self.get_video_details(videos_ids)
-        channel_data = self.create_dataframe(video_details)
-
-        return channel_data
-
     # Função para converter duração ISO 8601 para segundos
     def duration_to_seconds(self, duration):
         """Converte uma duração no formato ISO 8601 para segundos."""
@@ -109,13 +88,17 @@ class YoutubeAPI:
 
     # Obter o ID da playlist de uploads do canal
     def get_uploads_playlist_id(self):
-        response = self.youtube.channels().list(
-            part="contentDetails",
-            id=self.channel_id
-        ).execute()
+        try:
+            response = self.youtube.channels().list(
+                part="contentDetails",
+                id=self.channel_id
+            ).execute()
 
-        playlist = response['items'][0]['contentDetails']['relatedPlaylists']
-        return playlist['uploads']
+            return response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+        except googleapiclient.errors.HttpError as err:
+            self.logger.error(f"Error requesting google api: {err}")
+            self.config.wait(self.logger, 12, 8)
+            return None
 
     # Obter todos os vídeos da playlist de uploads
     def get_videos_from_playlist(self, playlist_id):
@@ -158,3 +141,30 @@ class YoutubeAPI:
                 }
                 details.append(video_data)
         return details
+
+    def get_latest_video(self):
+        playlist_id = self.get_uploads_playlist_id()
+        if playlist_id is None:
+            return None
+
+        # Obter o ID do último vídeo da playlist de uploads
+        response = self.youtube.playlistItems().list(
+            part="snippet",
+            playlistId=playlist_id,
+            maxResults=1
+        ).execute()
+
+        if not response['items']:
+            self.logger.info("No video found.")
+            return None
+
+        latest_video_id = response['items'][0]['snippet']['resourceId']['videoId']
+
+        latest_video_details = self.get_video_details([latest_video_id])
+
+        if latest_video_details:
+            latest_video_dataframe = self.create_dataframe(latest_video_details)
+            return latest_video_dataframe
+        else:
+            self.logger.info("Não foi possível obter detalhes do último vídeo.")
+            return None

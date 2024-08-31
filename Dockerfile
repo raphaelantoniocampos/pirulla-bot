@@ -1,16 +1,12 @@
 FROM python:3.12
 
-WORKDIR ./
+WORKDIR /app
 
 COPY requirements.txt ./
 
-COPY docker-entrypoint.sh ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN python3 -m venv .venv
-
-RUN . .venv/bin/activate && pip install -r ./requirements.txt
-
-COPY . ./
+COPY . .
 
 RUN chmod +x ./docker-entrypoint.sh
 
