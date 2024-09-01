@@ -36,7 +36,7 @@ class YoutubeAPI:
 
     def store_data(self, channel_data):
         self.logger.info("Storing channel data")
-        channel_data.to_csv("./app/data/channel_data.csv", sep=",", index=False)
+        channel_data.to_csv("./data/channel_data.csv", sep=",", index=False)
 
     def create_dataframe(self, video_details):
         # Dictionary to store video data
@@ -141,30 +141,3 @@ class YoutubeAPI:
                 }
                 details.append(video_data)
         return details
-
-    def get_latest_video(self):
-        playlist_id = self.get_uploads_playlist_id()
-        if playlist_id is None:
-            return None
-
-        # Obter o ID do último vídeo da playlist de uploads
-        response = self.youtube.playlistItems().list(
-            part="snippet",
-            playlistId=playlist_id,
-            maxResults=1
-        ).execute()
-
-        if not response['items']:
-            self.logger.info("No video found.")
-            return None
-
-        latest_video_id = response['items'][0]['snippet']['resourceId']['videoId']
-
-        latest_video_details = self.get_video_details([latest_video_id])
-
-        if latest_video_details:
-            latest_video_dataframe = self.create_dataframe(latest_video_details)
-            return latest_video_dataframe
-        else:
-            self.logger.info("Não foi possível obter detalhes do último vídeo.")
-            return None

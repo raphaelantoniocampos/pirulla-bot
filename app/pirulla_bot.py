@@ -18,7 +18,7 @@ class PirullaBot:
 
     def start(self):
         try:
-            channel_data = pd.read_csv("./app/data/channel_data.csv", sep=",")
+            channel_data = pd.read_csv("./data/channel_data.csv", sep=",")
         except FileNotFoundError:
             channel_data = self.youtube_api.generate_channel_data()
             if channel_data is None:
@@ -58,16 +58,6 @@ class PirullaBot:
         self.youtube_api.store_data(channel_data)
 
     def check_for_new_video(self, stored_data):
-        latest_video = self.youtube_api.get_latest_video()
-
-        if latest_video is None:
-            return None
-
-        if not latest_video.empty:
-            new = stored_data.tail(1).compare(other=latest_video)
-            if new.empty:
-                return None
-
         channel_data = self.youtube_api.generate_channel_data()
         if stored_data.equals(channel_data):
             return None
@@ -101,7 +91,7 @@ class PirullaBot:
 
         num_ticks_y = 10
         plt.locator_params(axis="y", nbins=num_ticks_y)
-        plt.savefig("./app/data/pirulla_plot.png", bbox_inches="tight")
+        plt.savefig("./data/pirulla_plot.png", bbox_inches="tight")
 
     def write_tweet(self, video_title, video_duration, video_url, last_video_mean, current_mean) -> str:
         """
@@ -120,7 +110,7 @@ class PirullaBot:
 
         formated_average = self.config.format_time(current_mean)
         formated_variation_time = self.config.format_time(variation_time)
-        formated_percentage_variation = self.config.format_percentage_variation(percentage_variation)
+        formated_percentage_variation = self.format_percentage_variation(percentage_variation)
         formated_duration = self.config.format_time(video_duration)
         up_emoji = "\U0001F4C8"
         down_emoji = "\U0001F4C9"
@@ -154,7 +144,7 @@ Variação {up_emoji if variation_time >= 0 else down_emoji} {formated_percentag
         auth.set_access_token(access_token, access_token_secret)
         api = tweepy.API(auth)
 
-        path_to_image = os.path.join(os.getcwd(), "", "./app/data/pirulla_plot.png")
+        path_to_image = os.path.join(os.getcwd(), "", "./data/pirulla_plot.png")
         image_path = path_to_image
         media_id = api.media_upload(image_path)
 
