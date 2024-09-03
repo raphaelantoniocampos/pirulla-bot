@@ -45,10 +45,10 @@ Once you have installed the dependencies, make sure to set up your Google and Tw
 DEVELOPER_KEY="Your Google API Developer Key"
 CHANNEL_ID="The Channel ID of the channel you want to analyze"
 TWITTER_API_KEY="Your Twitter/X API Key"
-API_SECRET_KEY="Your Twitter/X API Secret Key"
-BEARER_TOKEN="Your Twitter/X Access Token"
+TWITTER_API_SECRET="Your Twitter/X API Secret Key"
 ACCESS_TOKEN="Your Twitter/X Secret Access Token"
 ACCESS_SECRET_TOKEN="Your Twitter/X Bearer Token"
+BEARER_TOKEN="Your Twitter/X Access Token"
 ```
 
 ## 📦 Usage
