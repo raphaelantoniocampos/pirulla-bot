@@ -3,45 +3,52 @@
 This project tracks the average length of videos on the "Pirulla" YouTube channel. The script collects data from the channel, calculates the average video duration, posts updates on Twitter with relevant statistics and a plot showing the variation in average duration over time.
 
 ## 🚀 Prerequisites
+
 Python 3.x
 
-Required Python packages (install using pip install -r requirements.txt):
-
--os
-
--datetime
-
--time
-
--random
-
--json
+Required Python packages
 
 -matplotlib
 
--pytube
+-pandas
+
+-google-api-python-client
+
+-python-dotenv
 
 -tweepy
 
 ## ⚙️ Configuration
 
-Once you have installed the dependencies, you can clone the repository and run the following command to generate the data the bot will need:
+Create a data directory inside the app directory
 
 ```
-python3 data_generator.py
+cd app/
+mkdir data
 ```
-It will create the channel_data.json file.
 
-Before running the script, make sure to set up your Twitter API keys and secrets. Create a file named credentials.json with the following structure:
+Inside the app directory, set up your python virtual environment
 
 ```
-{
-  "API key": "your_api_key",
-  "API secret key": "your_api_secret_key",
-  "Access Token": "your_access_token",
-  "Access Secret Token": "your_access_secret_token",
-  "Bearer Token": "your_bearer_token"
-}
+python3 -m venv .venv
+```
+
+Start your virtual environment and install the dependencies
+```
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
+```
+
+Once you have installed the dependencies, make sure to set up your Google and Twitter/X API keys and secrets. Create a .env file with the following structure:
+
+```
+DEVELOPER_KEY="Your Google API Developer Key"
+CHANNEL_ID="The Channel ID of the channel you want to analyze"
+TWITTER_API_KEY="Your Twitter/X API Key"
+API_SECRET_KEY="Your Twitter/X API Secret Key"
+BEARER_TOKEN="Your Twitter/X Access Token"
+ACCESS_TOKEN="Your Twitter/X Secret Access Token"
+ACCESS_SECRET_TOKEN="Your Twitter/X Bearer Token"
 ```
 
 ## 📦 Usage
@@ -52,17 +59,17 @@ Run the script by executing the following command in your terminal:
 python3 main.py
 ```
 
-The script will continuously monitor the YouTube channel, checking for updates. When a new video is published, it calculates the average video duration, generates a plot, and posts a tweet with relevant statistics.
+The script will generate a channel_data.csv inside the data directory you've created and then continuously monitor the YouTube channel, checking for updates. When a new video is published, it calculates the average video duration, generates a plot, and posts a tweet with relevant statistics.
 
 ## 🗒️ Notes
 
-The script uses the PyTube library to interact with YouTube data and the Tweepy library for posting tweets.
+The script uses the Google API to interact with YouTube data and the Tweepy library for posting tweets.
 
 Twitter API keys are required for posting tweets. Ensure proper configuration in the credentials.json file.
 
-The channel_data.json file stores historical data to track changes in the channel statistics over time.
+The channel_data.csv file stores historical data to track changes in the channel statistics over time.
 
-The generated plot (pirulla_plot.png) visually represents the variation in average video duration.
+The generated plot (data/pirulla_plot.png) visually represents the variation in average video duration.
 
 ## 🖇️ Contributing
 If you would like to contribute to this project, please feel free to open an issue or pull request.
