@@ -65,7 +65,7 @@ The script will generate a channel_data.csv inside the data directory you've cre
 
 The script uses the Google API to interact with YouTube data and the Tweepy library for posting tweets.
 
-Twitter API keys are required for posting tweets. Ensure proper configuration in the credentials.json file.
+Twitter/X and Google API keys are required. Ensure proper configuration in the .env file.
 
 The channel_data.csv file stores historical data to track changes in the channel statistics over time.
 
