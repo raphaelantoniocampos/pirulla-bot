@@ -53,7 +53,7 @@ jobs:
           fi
           sudo docker stop pirullabot || true
           sudo docker rm pirullabot || true
-          # sudo docker system prune -a -f || true
+          sudo docker system prune -a -f || true
           sudo docker load -i /home/${{ secrets.EC2_USER }}/pirullabot.tar
           sudo docker run -d -e YOUTUBE_DEVELOPER_KEY=${{ secrets.YOUTUBE_DEVELOPER_KEY }} -e CHANNEL_ID=${{ secrets.CHANNEL_ID }} -e TWITTER_API_KEY=${{ secrets.TWITTER_API_KEY }} -e TWITTER_API_SECRET=${{ secrets.TWITTER_API_SECRET }} -e ACCESS_TOKEN=${{ secrets.ACCESS_TOKEN }} -e ACCESS_SECRET_TOKEN=${{ secrets.ACCESS_SECRET_TOKEN }} -e BEARER_TOKEN=${{ secrets.BEARER_TOKEN }} -v /home/${{ secrets.EC2_USER }}/pirulla-bot/app/data:/app/data --name pirullabot pirullabot:2.0
           EOF
