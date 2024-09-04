@@ -31,6 +31,7 @@ class YoutubeAPI:
         videos_ids = self.get_videos_from_playlist(playlist_id)
         video_details = self.get_video_details(videos_ids)
         channel_data = self.create_dataframe(video_details)
+        channel_data.drop_duplicates(subset="id", inplace=True)
 
         return channel_data
 
