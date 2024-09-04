@@ -45,7 +45,7 @@ jobs:
 
     - name: SSH and load Docker image on EC2
       run: |
-          ssh -t -i ./pirullakey.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << EOF
+          ssh -t -i ./pirullakey.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
           if ! systemctl is-active --quiet docker; then
             sudo systemctl start docker
           else
