@@ -18,7 +18,7 @@ class PirullaBot:
 
     def start(self):
         try:
-            channel_data = pd.read_csv("./data/channel_data.csv", sep=",")
+            stored_data = pd.read_csv("./data/channel_data.csv", sep=",")
         except FileNotFoundError:
             channel_data = self.youtube_api.generate_channel_data()
             if channel_data is None:
@@ -28,7 +28,8 @@ class PirullaBot:
             return
         verifications = 0
         while verifications < self.needed_verifications:
-            differences = self.check_for_new_video(channel_data)
+            channel_data = self.youtube_api.generate_channel_data()
+            differences = self.check_for_new_video(channel_data, stored_data)
             if differences is None:
                 self.config.wait(self.logger)
                 return
@@ -38,27 +39,25 @@ class PirullaBot:
             continue
         # There are updates
         self.logger.info(f"There are updates. Verifications: {verifications + 1}/{self.needed_verifications + 1}")
-
         while not differences.empty:
             video = differences.head(1)
-            differences = differences.drop(differences.index[0]) #.reset_index(drop=True)
-            last_stored_video = channel_data.tail(1)
+            differences = differences.drop(differences.index[0])  # reset_index(drop=True)
+            last_stored_video = stored_data.tail(1)
             last_video_mean = last_stored_video['currentMean'].to_numpy()[0]
             current_mean = video['currentMean'].to_numpy()[0]
             video_title = video['title'].to_numpy()[0]
             video_duration = video['duration'].to_numpy()[0]
             video_url = video['url'].to_numpy()[0]
-            channel_data = pd.concat([channel_data, video], axis=0,ignore_index=True)
-            self.create_variation_plot(channel_data)
+            new_channel_data = pd.concat([stored_data, video], axis=0,ignore_index=True)
+            self.create_variation_plot(new_channel_data)
             tweet = self.write_tweet(video_title, video_duration, video_url, last_video_mean, current_mean)
             print(tweet)
             # TODO: Activate post tweet method
             # post_tweet(tweet)
 
-        self.youtube_api.store_data(channel_data)
+        self.youtube_api.store_data(new_channel_data)
 
-    def check_for_new_video(self, stored_data):
-        channel_data = self.youtube_api.generate_channel_data()
+    def check_for_new_video(self, channel_data, stored_data):
         if stored_data.equals(channel_data):
             return None
 
