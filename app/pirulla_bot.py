@@ -49,6 +49,7 @@ class PirullaBot:
                 # post_tweet(tweet)
 
             self.youtube_api.store_data(new_channel_data)
+            self.config.wait(self.logger)
         except FileNotFoundError:
             channel_data = self.youtube_api.generate_channel_data()
             if channel_data is None:
