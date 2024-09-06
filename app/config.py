@@ -9,7 +9,7 @@ class Config:
         load_dotenv()
         self.DEVELOPER_KEY = os.getenv("YOUTUBE_DEVELOPER_KEY")
         self.CHANNEL_ID = os.getenv("CHANNEL_ID")
-        self.NEEDED_VERIFICATIONS = 2
+        self.REQUIRED_VERIFICATIONS = 1  # TODO: =2
         self.TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
         self.API_SECRET_KEY = os.getenv("TWITTER_API_SECRET")
         self.ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
@@ -26,6 +26,7 @@ class Config:
         minute = 60
         hour = 60 * minute
         wait_time = randint(min_hours * hour, max_hours * hour)
+        wait_time = 5  # TODO: Delete line
         logger.info(f"Recheck in {self.format_time(wait_time)}")
         time.sleep(wait_time)
 
@@ -42,6 +43,7 @@ class Config:
 
         if seconds < 0:
             seconds *= -1
+
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
         milliseconds = int((seconds % 1) * 1000)

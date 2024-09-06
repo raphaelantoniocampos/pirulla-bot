@@ -1,4 +1,3 @@
-from datetime import datetime
 import os
 import logging
 
@@ -6,69 +5,98 @@ from matplotlib import pyplot as plt
 import tweepy
 import pandas as pd
 
-from config import Config
-
 
 class PirullaBot:
-    def __init__(self, youtube_api, needed_verifications):
+    def __init__(self, youtube_api, stored_data, config):
         self.logger = logging.getLogger(__name__)
         self.youtube_api = youtube_api
-        self.needed_verifications = needed_verifications
-        self.config = Config()
+        self.config = config
 
     def start(self):
-        try:
-            stored_data = pd.read_csv("./data/channel_data.csv", sep=",")
-            verifications = 0
-            while verifications < self.needed_verifications:
-                channel_data = self.youtube_api.generate_channel_data()
-                differences = self.check_for_new_video(channel_data, stored_data)
-                if differences is None:
-                    self.config.wait(self.logger)
-                    return
-                verifications += 1
-                self.logger.info(f"Seems like there are updates. Verifications: {verifications}/{self.needed_verifications + 1}")
-                self.config.wait(self.logger)
-                continue
-            # There are updates
-            self.logger.info(f"There are updates. Verifications: {verifications + 1}/{self.needed_verifications + 1}")
-            while not differences.empty:
-                video = differences.head(1)
-                differences = differences.drop(differences.index[0])  # reset_index(drop=True)
-                last_stored_video = stored_data.tail(1)
-                last_video_mean = last_stored_video['currentMean'].to_numpy()[0]
-                current_mean = video['currentMean'].to_numpy()[0]
-                video_title = video['title'].to_numpy()[0]
-                video_duration = video['duration'].to_numpy()[0]
-                video_url = video['url'].to_numpy()[0]
-                new_channel_data = pd.concat([stored_data, video], axis=0,ignore_index=True)
-                self.create_variation_plot(new_channel_data)
-                tweet = self.write_tweet(video_title, video_duration, video_url, last_video_mean, current_mean)
-                print(tweet)
-                # TODO: Activate post tweet method
-                # post_tweet(tweet)
+        stored_data = self.youtube_api.get_stored_data()
+        channel_data = self.youtube_api.generate_channel_data()
 
-            self.youtube_api.store_data(new_channel_data)
-            self.config.wait(self.logger)
-        except FileNotFoundError:
-            channel_data = self.youtube_api.generate_channel_data()
-            if channel_data is None:
-                return
-            self.youtube_api.store_data(channel_data)
-            self.config.wait(self.logger)
+        if stored_data.equals(channel_data):
             return
 
-    def check_for_new_video(self, channel_data, stored_data):
-        if stored_data.equals(channel_data):
-            return None
+        required_verifications = self.config.REQUIRED_VERIFICATIONS
+        for verification in range(required_verifications):
+            self.logger.info(f"Seems like there are updates. Verifications: {verification + 1}/{required_verifications + 1}")
+            self.config.wait(self.logger)
+            channel_data = self.youtube_api.generate_channel_data()
 
+            if stored_data.equals(channel_data):
+                return
+
+        self.process_update(stored_data, channel_data)
+
+    def process_update(self, stored_data, channel_data):
         differences = pd.concat([channel_data, stored_data]).drop_duplicates(keep=False)
+        differences = differences.reset_index(drop=True)
 
         if differences.empty:
-            return None
-        return differences
+            return
+
+        if differences is None:
+            self.logger.info("There are no updates")
+            self.config.wait(self.logger)
+            return
+        self.logger.info(f"Seems like there are updates. Verifications: {verifications + 1}/{self.needed_verifications + 1}")
+        self.config.wait(self.logger)
+        verifications += 1
+
+    self.logger.info(f"There are updates. Verifications: {verifications + 1}/{self.needed_verifications + 1}")
+    while not differences.empty:
+        video = differences.loc[0]
+        last_stored_video = stored_data.iloc[-1]
+        break
+        last_video_mean = last_stored_video['currentMean']
+        current_mean = video['currentMean']
+        video_title = video['title']
+        video_duration = video['duration']
+        video_url = video['url']
+        new_channel_data = pd.concat([stored_data, video.to_frame()], ignore_index=True)
+        self.create_variation_plot(new_channel_data)
+        tweet = self.write_tweet(video_title, video_duration, video_url, last_video_mean, current_mean)
+        stored_data = self.youtube_api.store_data(new_channel_data)
+        print(tweet)
+        # TODO: Activate post tweet method
+        # post_tweet(tweet)
+
+        differences = differences.drop(differences.index[0])
+        differences = differences.reset_index(drop=True)
+
+        self.config.wait(self.logger)
 
     def create_variation_plot(self, channel_data):
+        """
+        Creates a plot of the variation of the Pirulla average over time and saves it at 'pirulla_plot.png'.
+        """
+        # Garantir que 'publishedAt' é convertido para datetime
+        channel_data['publishedAt'] = pd.to_datetime(channel_data['publishedAt'], errors='coerce')
+
+        # Remover linhas com datas inválidas
+        channel_data = channel_data.dropna(subset=['publishedAt'])
+
+        # Preparar os dados para o gráfico
+        channel_data = channel_data.sort_values(by='publishedAt')
+        dates = channel_data['publishedAt']
+        means = channel_data['currentMean'] / 60
+
+        fig = plt.figure(dpi=120, figsize=(10, 6))
+        plt.grid()
+        plt.plot(dates, means, c="blue")
+
+        plt.title("Variação da cotação do Pirulla desde 2006", fontsize=20)
+        fig.autofmt_xdate()
+        plt.ylabel("Pirulla (min)", fontsize=14)
+        plt.tick_params(axis="both", which="major", labelsize=12)
+
+        num_ticks_y = 10
+        plt.locator_params(axis="y", nbins=num_ticks_y)
+        plt.savefig("./data/pirulla_plot.png", bbox_inches="tight")
+
+    def create_variation_plot_old(self, channel_data):  # TODO: Remove method
         """
         Creates a plot of the variation of the Pirulla average over time and saves it at 'pirulla.plot.png'
 
@@ -77,7 +105,8 @@ class PirullaBot:
         dates = []
         means = []
         for _, item in channel_data.iterrows():
-            dates.append(datetime.strptime(item["publishedAt"], "%Y-%m-%dT%H:%M:%SZ"))
+            # dates.append(datetime.strptime(item["publishedAt"], "%Y-%m-%dT%H:%M:%SZ"))
+            dates.append(item["publishedAt"])
             means.append(item["currentMean"] / 60)
 
         fig = plt.figure(dpi=120, figsize=(10, 6))
@@ -105,7 +134,7 @@ class PirullaBot:
             A tweet that shows the variation and percentage variation with an emoji.
         """
 
-        variation_time = self.get_variation_time(last_video_mean, current_mean)
+        variation_time = last_video_mean - current_mean
         percentage_variation = self.get_percentage_variation(variation_time, last_video_mean)
 
         formated_average = self.config.format_time(current_mean)
@@ -129,7 +158,7 @@ Variação {up_emoji if variation_time >= 0 else down_emoji} {formated_percentag
 """
         return tweet
 
-    def post_tweet(tweet):
+    def post_tweet(self, tweet):
         """
         Posts the tweet to Twitter.
 
@@ -154,20 +183,6 @@ Variação {up_emoji if variation_time >= 0 else down_emoji} {formated_percentag
 
         media_ids = [media_id.media_id]
         client.create_tweet(text=tweet, media_ids=media_ids)
-
-    def get_variation_time(self, last_average, new_average):
-        """
-        Gets the variation in the time between two points in time.
-
-        Args:
-            last_average: The last average time.
-            new_average: The new average time.
-
-        Returns:
-            The variation in the time.
-        """
-
-        return new_average - last_average
 
     def get_percentage_variation(self, variation_time, last_average):
         """

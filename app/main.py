@@ -16,15 +16,15 @@ def main() -> None:
     config = Config()
     developer_key = config.DEVELOPER_KEY
     channel_id = config.CHANNEL_ID
-    needed_verifications = config.NEEDED_VERIFICATIONS
 
     youtube_api = YoutubeAPI(developer_key, channel_id)
-    pirulla_bot = PirullaBot(youtube_api, needed_verifications)
+    pirulla_bot = PirullaBot(youtube_api)
 
     logger.info(f"Bot started: {datetime.now()}")
     while True:
         logger.info(f"Bot running: {datetime.now()}")
         pirulla_bot.start()
+        config.wait(logger)
 
 
 if __name__ == "__main__":

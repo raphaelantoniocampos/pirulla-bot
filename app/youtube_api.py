@@ -4,20 +4,44 @@ import logging
 
 import googleapiclient.discovery
 
-from config import Config
 
 class YoutubeAPI:
-    def __init__(self, developer_key, channel_id):
+    def __init__(self, config):
         logging.basicConfig(level=logging.INFO)
         self.logger = logging.getLogger(__name__)
-
         self.api_service_name = "youtube"
         self.api_version = "v3"
-        self.channel_id = channel_id
-        self.developer_key = developer_key
-        self.config = Config()
+
+        self.config = config
+        self.channel_id = config.CHANNEL_ID
+        self.developer_key = config.DEVELOPER_KEY
+
         self.youtube = googleapiclient.discovery.build(
-            self.api_service_name, self.api_version, developerKey = developer_key)
+            self.api_service_name, self.api_version, developerKey=self.developer_key)
+
+    def get_stored_data(self) -> pd.DataFrame:
+        """Read stored channel data from CSV."""
+        try:
+            # Read CSV into DataFrame
+            df = pd.read_csv("./data/channel_data.csv", sep=",", dtype={
+                'id': str,
+                'title': str,
+                'url': str,
+                'publishedAt': str,
+                'duration': int,
+                'currentMean': float
+            })
+
+            # Convert 'publishedAt' column to datetime
+            df['publishedAt'] = pd.to_datetime(df['publishedAt'])
+
+            return df
+
+        except FileNotFoundError:
+            channel_data = self.generate_channel_data()
+            if channel_data is None:
+                return
+            return self.store_data(channel_data)
 
     def generate_channel_data(self):
         """
@@ -31,14 +55,15 @@ class YoutubeAPI:
         videos_ids = self.get_videos_from_playlist(playlist_id)
         video_details = self.get_video_details(videos_ids)
         channel_data = self.create_dataframe(video_details)
-        channel_data.drop_duplicates(subset="id", inplace=True)
 
         return channel_data
 
-    def store_data(self, channel_data):
+    def store_data(self, df):
         self.logger.info("Storing channel data")
-        channel_data.drop_duplicates(subset="id", inplace=True)
-        channel_data.to_csv("./data/channel_data.csv", sep=",", index=False)
+        df = df.drop_duplicates(subset="id")
+        df = df.sort_values(by=['publishedAt'])
+        df.to_csv("./data/channel_data.csv", sep=",", index=False)
+        return df
 
     def create_dataframe(self, video_details):
         # Dictionary to store video data
@@ -59,7 +84,7 @@ class YoutubeAPI:
             duration_sum += duration
             id = video['id']
             title = video['title']
-            publishedAt = video['publishedAt']
+            publishedAt = pd.to_datetime(video['publishedAt'])
             currentMean = round(duration_sum / (i + 1), 2)
             url = f"https://www.youtube.com/watch?v={id}"
             videos_info['id'].append(id)
@@ -69,7 +94,10 @@ class YoutubeAPI:
             videos_info['currentMean'].append(currentMean)
             videos_info['url'].append(url)
 
-        return pd.DataFrame(data=videos_info)
+        df = pd.DataFrame(data=videos_info)
+        df = df.drop_duplicates(subset="id")
+        df = df.sort_values(by=['publishedAt'])
+        return df
 
     # Função para converter duração ISO 8601 para segundos
     def duration_to_seconds(self, duration):
