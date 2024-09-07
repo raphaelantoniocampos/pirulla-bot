@@ -14,11 +14,9 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     config = Config()
-    developer_key = config.DEVELOPER_KEY
-    channel_id = config.CHANNEL_ID
 
-    youtube_api = YoutubeAPI(developer_key, channel_id)
-    pirulla_bot = PirullaBot(youtube_api)
+    youtube_api = YoutubeAPI(config)
+    pirulla_bot = PirullaBot(youtube_api, config)
 
     logger.info(f"Bot started: {datetime.now()}")
     while True:

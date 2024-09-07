@@ -7,7 +7,7 @@ import pandas as pd
 
 
 class PirullaBot:
-    def __init__(self, youtube_api, stored_data, config):
+    def __init__(self, youtube_api, config):
         self.logger = logging.getLogger(__name__)
         self.youtube_api = youtube_api
         self.config = config
@@ -17,6 +17,7 @@ class PirullaBot:
         channel_data = self.youtube_api.generate_channel_data()
 
         if stored_data.equals(channel_data):
+            self.logger.info("There are no updates")
             return
 
         required_verifications = self.config.REQUIRED_VERIFICATIONS
@@ -26,8 +27,10 @@ class PirullaBot:
             channel_data = self.youtube_api.generate_channel_data()
 
             if stored_data.equals(channel_data):
+                self.logger.info("There are no updates")
                 return
 
+        self.logger.info("There are updates")
         self.process_update(stored_data, channel_data)
 
     def process_update(self, stored_data, channel_data):
@@ -38,35 +41,24 @@ class PirullaBot:
             return
 
         if differences is None:
-            self.logger.info("There are no updates")
-            self.config.wait(self.logger)
             return
-        self.logger.info(f"Seems like there are updates. Verifications: {verifications + 1}/{self.needed_verifications + 1}")
-        self.config.wait(self.logger)
-        verifications += 1
 
-    self.logger.info(f"There are updates. Verifications: {verifications + 1}/{self.needed_verifications + 1}")
-    while not differences.empty:
-        video = differences.loc[0]
-        last_stored_video = stored_data.iloc[-1]
-        break
-        last_video_mean = last_stored_video['currentMean']
-        current_mean = video['currentMean']
-        video_title = video['title']
-        video_duration = video['duration']
-        video_url = video['url']
-        new_channel_data = pd.concat([stored_data, video.to_frame()], ignore_index=True)
-        self.create_variation_plot(new_channel_data)
-        tweet = self.write_tweet(video_title, video_duration, video_url, last_video_mean, current_mean)
-        stored_data = self.youtube_api.store_data(new_channel_data)
-        print(tweet)
-        # TODO: Activate post tweet method
-        # post_tweet(tweet)
+        if not differences.empty:
+            video = differences.loc[0]
+            last_stored_video = stored_data.iloc[-1]
+            last_video_mean = last_stored_video['currentMean']
+            current_mean = video['currentMean']
+            video_title = video['title']
+            video_duration = video['duration']
+            video_url = video['url']
+            new_channel_data = pd.concat([stored_data, video.to_frame().T], ignore_index=True)
+            self.create_variation_plot(new_channel_data)
+            tweet = self.write_tweet(video_title, video_duration, video_url, last_video_mean, current_mean)
 
-        differences = differences.drop(differences.index[0])
-        differences = differences.reset_index(drop=True)
-
-        self.config.wait(self.logger)
+            stored_data = self.youtube_api.store_data(new_channel_data)
+            print(tweet)
+            # TODO: Activate post tweet method
+            # post_tweet(tweet)
 
     def create_variation_plot(self, channel_data):
         """
@@ -123,18 +115,7 @@ class PirullaBot:
         plt.savefig("./data/pirulla_plot.png", bbox_inches="tight")
 
     def write_tweet(self, video_title, video_duration, video_url, last_video_mean, current_mean) -> str:
-        """
-        Gets the last average and the current average time and returns a formated tweet
-
-        Args:
-            last_average: The last average time.
-            average_time: The current average time.
-
-        Returns:
-            A tweet that shows the variation and percentage variation with an emoji.
-        """
-
-        variation_time = last_video_mean - current_mean
+        variation_time = current_mean - last_video_mean
         percentage_variation = self.get_percentage_variation(variation_time, last_video_mean)
 
         formated_average = self.config.format_time(current_mean)
