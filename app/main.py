@@ -29,5 +29,5 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("Exiting due to KeyboardInterrupt")
+        logging.getLogger(__name__).info("Exiting due to KeyboardInterrupt")
         sys.exit()

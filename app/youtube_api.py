@@ -60,7 +60,6 @@ class YoutubeAPI:
 
     def store_data(self, df):
         self.logger.info("Storing channel data")
-        df = df.drop_duplicates(subset="id")
         df = df.sort_values(by=['publishedAt'])
         df.to_csv("./data/channel_data.csv", sep=",", index=False)
         return df
