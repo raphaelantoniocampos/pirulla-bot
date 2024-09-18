@@ -76,6 +76,7 @@ class PirullaBot:
         num_ticks_y = 10
         plt.locator_params(axis="y", nbins=num_ticks_y)
         plt.savefig("./data/pirulla_plot.png", bbox_inches="tight")
+        plt.close()
 
     def create_variation_plot_old(self, channel_data):  # TODO: Remove method
         """
