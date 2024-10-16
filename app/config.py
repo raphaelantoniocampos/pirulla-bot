@@ -22,7 +22,7 @@ class Config:
             self.ACCESS_SECRET_TOKEN, self.BEARER_TOKEN
         )
 
-    def wait(self, logger, max_hours=3, min_hours=1):
+    def wait(self, logger, max_hours=2, min_hours=1):
         minute = 60
         hour = 60 * minute
         wait_time = randint(min_hours * hour, max_hours * hour)

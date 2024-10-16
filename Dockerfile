@@ -1,4 +1,4 @@
-FROM python:3.11
+FROM python:3.12
 
 WORKDIR /app
 
@@ -16,6 +16,6 @@ RUN mkdir -p ./data/
 
 RUN chmod +x ./docker-entrypoint.sh
 
-ENTRYPOINT ["./docker-entrypoint.sh"]
+ENTRYPOINT ["/app/docker-entrypoint.sh"]
 
-CMD [".venv/bin/python3", "-u", "main.py"]
+CMD ["/app/.venv/bin/python3", "-u", "main.py"]
