@@ -126,7 +126,7 @@ class YoutubeAPI:
             return response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
         except googleapiclient.errors.HttpError as err:
             self.logger.error(f"Error requesting google api: {err}")
-            self.config.wait(self.logger, 12, 8)
+            self.config.wait(self.logger, 12 * 60, 8 * 60)
             return None
 
     # Obter todos os vídeos da playlist de uploads
