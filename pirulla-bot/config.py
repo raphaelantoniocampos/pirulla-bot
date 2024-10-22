@@ -22,13 +22,10 @@ class Config:
             self.ACCESS_SECRET_TOKEN, self.BEARER_TOKEN
         )
 
-    def wait(self, logger, max_hours=2, min_hours=1):
-        minute = 60
-        hour = 60 * minute
-        wait_time = randint(min_hours * hour, max_hours * hour)
+    def wait(self, logger, max_minutes=10, min_minutes=5):
+        wait_time = randint(min_minutes * 60, max_minutes * 60)
         logger.info(f"Recheck in {self.format_time(wait_time)}")
-        # time.sleep(wait_time)
-        time.sleep(60)
+        time.sleep(wait_time)
 
     def format_time(self, seconds):
         """
