@@ -1,21 +1,23 @@
-FROM python:3.12
+FROM python:3.11-bookworm AS builder
+
+ENV PYTHONUNBUFFERED=1 \ 
+    PYTHONDONTWRITEBYTECODE=1 
+
+RUN pip install poetry && poetry config virtualenvs.in-project true
 
 WORKDIR /app
 
-COPY requirements.txt ./
+COPY pyproject.toml poetry.lock ./
 
-COPY docker-entrypoint.sh ./
+RUN poetry install
 
-RUN python3 -m venv .venv
 
-RUN . .venv/bin/activate && pip install --no-cache-dir -r requirements.txt
+FROM python:3.11-slim-bookworm
 
-COPY ./app /app
+WORKDIR /app
 
-RUN mkdir -p ./data/
+COPY --from=builder /app .
+COPY pirulla-bot/ ./pirulla-bot/
 
-RUN chmod +x ./docker-entrypoint.sh
+CMD ["/app/.venv/bin/python", "pirulla-bot/main.py"]
 
-ENTRYPOINT ["/app/docker-entrypoint.sh"]
-
-CMD ["/app/.venv/bin/python3", "-u", "main.py"]

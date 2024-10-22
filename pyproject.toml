@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "pirulla-bot"
+version = "0.1.0"
+description = ""
+authors = ["Raphael Campos <raphaelcampos01@proton.me>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pandas = "^2.2.3"
+matplotlib = "^3.9.2"
+google-api-python-client = "^2.149.0"
+python-dotenv = "^1.0.1"
+tweepy = "^4.14.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

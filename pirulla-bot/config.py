@@ -27,7 +27,8 @@ class Config:
         hour = 60 * minute
         wait_time = randint(min_hours * hour, max_hours * hour)
         logger.info(f"Recheck in {self.format_time(wait_time)}")
-        time.sleep(wait_time)
+        # time.sleep(wait_time)
+        time.sleep(60)
 
     def format_time(self, seconds):
         """

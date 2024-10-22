@@ -1,6 +1,6 @@
-__pycache__/
-credentials.json
-app/data/*
-.mypy.ini
-.venv/
-.env
+pirulla-bot/__pycache__/
+pirulla-bot/data/*
+pirulla-bot/.mypy.ini
+pirulla-bot/.venv/
+pirulla-bot/.env
+.venv
