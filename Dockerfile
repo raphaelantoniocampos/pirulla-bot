@@ -1,4 +1,4 @@
-FROM python:3.10-bookworm AS builder
+FROM python:3.11-bookworm AS builder
 
 ENV PYTHONUNBUFFERED=1 \ 
     PYTHONDONTWRITEBYTECODE=1 
@@ -17,7 +17,7 @@ FROM python:3.11-slim-bookworm
 WORKDIR /app
 
 COPY --from=builder /app .
+
 COPY pirulla-bot/ ./pirulla-bot/
 
 CMD ["/app/.venv/bin/python", "pirulla-bot/main.py"]
-

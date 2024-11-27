@@ -3,7 +3,6 @@ pirulla-bot/__pycache__/
 pirulla-bot/data/*
 pirulla-bot/.mypy.ini
 pirulla-bot/.venv/
-pirulla-bot/.env
 fly.toml
 
 
