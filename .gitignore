@@ -1,6 +1,3 @@
-pirulla-bot/__pycache__/
-pirulla-bot/data/*
-pirulla-bot/.mypy.ini
-pirulla-bot/.venv/
-pirulla-bot/.env
-.venv
+__pycache__/
+data/*
+.env

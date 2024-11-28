@@ -1,8 +1,0 @@
-# flyctl launch added from .gitignore
-pirulla-bot/__pycache__/
-pirulla-bot/data/*
-pirulla-bot/.mypy.ini
-pirulla-bot/.venv/
-fly.toml
-
-
