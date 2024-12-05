@@ -22,8 +22,7 @@ class YoutubeAPI:
     def get_stored_data(self) -> pd.DataFrame:
         """Read stored channel data from CSV."""
         try:
-            # Read CSV into DataFrame
-            df = pd.read_csv("/mnt/data/channel_data.csv", sep=",", dtype={
+            df = pd.read_csv("data/channel_data.csv", sep=",", dtype={
                 'id': str,
                 'title': str,
                 'url': str,
@@ -61,7 +60,7 @@ class YoutubeAPI:
     def store_data(self, df):
         self.logger.info("Storing channel data")
         df = df.sort_values(by=['publishedAt'])
-        df.to_csv("/mnt/data/channel_data.csv", sep=",", index=False)
+        df.to_csv("data/channel_data.csv", sep=",", index=False)
         return df
 
     def create_dataframe(self, video_details):

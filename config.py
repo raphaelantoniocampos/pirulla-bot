@@ -7,7 +7,7 @@ import os
 class Config:
     def __init__(self):
         load_dotenv()
-        self.DEVELOPER_KEY = os.getenv("YOUTUBE_DEVELOPER_KEY")
+        self.DEVELOPER_KEY = os.getenv("DEVELOPER_KEY")
         self.CHANNEL_ID = os.getenv("CHANNEL_ID")
         self.REQUIRED_VERIFICATIONS = 2
         self.TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
@@ -15,6 +15,8 @@ class Config:
         self.ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
         self.ACCESS_SECRET_TOKEN = os.getenv("ACCESS_SECRET_TOKEN")
         self.BEARER_TOKEN = os.getenv("BEARER_TOKEN")
+        self.BEARER_TOKEN = os.getenv("BEARER_TOKEN")
+        self.MODE = 'prod' if os.getenv("MODE") == 'prod' else 'dev'
 
     def get_twitter_keys(self):
         return (
@@ -23,7 +25,11 @@ class Config:
         )
 
     def wait(self, logger, max_minutes=120, min_minutes=60):
-        wait_time = randint(min_minutes * 60, max_minutes * 60)
+        mode_to_wait_time = {
+            'dev': 1,
+            'prod': randint(min_minutes * 60, max_minutes * 60),
+        }
+        wait_time = mode_to_wait_time.get(self.MODE, 1)
         logger.info(f"Recheck in {self.format_time(wait_time)}")
         time.sleep(wait_time)
 
@@ -51,4 +57,3 @@ class Config:
         seconds_string = f"{seconds:02d}s:"
         milliseconds_string = f"{milliseconds:03d}ms"
         return f"{hours_string if hours != 0 else ''}{minutes_string if minutes != 0 else ''}{seconds_string}{milliseconds_string}"
-
