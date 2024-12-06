@@ -24,12 +24,12 @@ class Config:
             self.ACCESS_SECRET_TOKEN, self.BEARER_TOKEN
         )
 
-    def wait(self, logger, max_minutes=120, min_minutes=60):
+    def wait(self, logger, max_minutes=360, min_minutes=120):
         mode_to_wait_time = {
-            'dev': 1,
+            'dev': 5,
             'prod': randint(min_minutes * 60, max_minutes * 60),
         }
-        wait_time = mode_to_wait_time.get(self.MODE, 1)
+        wait_time = mode_to_wait_time.get(self.MODE, 5)
         logger.info(f"Recheck in {self.format_time(wait_time)}")
         time.sleep(wait_time)
 

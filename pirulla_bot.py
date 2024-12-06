@@ -21,7 +21,8 @@ class PirullaBot:
             if stored_data.equals(channel_data):
                 self.logger.info("There are no updates")
                 return
-            self.logger.info(f"Seems like there are updates. Verifications: {verification + 1}/{required_verifications + 1}")
+            self.logger.info("Seems like there are updates.")
+            self.logger.info(f"Verifications: {verification + 1}/{required_verifications + 1}")
             self.config.wait(self.logger)
 
         self.process_update(stored_data, channel_data)
@@ -44,9 +45,7 @@ class PirullaBot:
         self.create_variation_plot(new_channel_data)
         tweet = self.write_tweet(video_title, video_duration, video_url, last_video_mean, current_mean)
 
-        print(tweet)
-        # TODO: Activate post tweet method
-        # post_tweet(tweet)
+        self.post_tweet(tweet)
         self.youtube_api.store_data(new_channel_data)
 
     def create_variation_plot(self, channel_data):
@@ -78,32 +77,6 @@ class PirullaBot:
         plt.savefig("./data/pirulla_plot.png", bbox_inches="tight")
         plt.close()
 
-    def create_variation_plot_old(self, channel_data):  # TODO: Remove method
-        """
-        Creates a plot of the variation of the Pirulla average over time and saves it at 'pirulla.plot.png'
-
-        """
-
-        dates = []
-        means = []
-        for _, item in channel_data.iterrows():
-            # dates.append(datetime.strptime(item["publishedAt"], "%Y-%m-%dT%H:%M:%SZ"))
-            dates.append(item["publishedAt"])
-            means.append(item["currentMean"] / 60)
-
-        fig = plt.figure(dpi=120, figsize=(10, 6))
-        plt.grid()
-        plt.plot(dates, means, c="blue")
-
-        plt.title("Variação da cotação do Pirulla desde 2006", fontsize=20)
-        fig.autofmt_xdate()
-        plt.ylabel("Pirulla (min)", fontsize=14)
-        plt.tick_params(axis="both", which="major", labelsize=12)
-
-        num_ticks_y = 10
-        plt.locator_params(axis="y", nbins=num_ticks_y)
-        plt.savefig("./data/pirulla_plot.png", bbox_inches="tight")
-
     def write_tweet(self, video_title, video_duration, video_url, last_video_mean, current_mean) -> str:
         variation_time = current_mean - last_video_mean
         percentage_variation = self.get_percentage_variation(variation_time, last_video_mean)
@@ -112,20 +85,26 @@ class PirullaBot:
         formated_variation_time = self.config.format_time(variation_time)
         formated_percentage_variation = self.format_percentage_variation(percentage_variation)
         formated_duration = self.config.format_time(video_duration)
+
+        # Emojis
+        underscores = "_" * len(video_title) if video_title >= video_url else "_" * len(video_url)
         up_emoji = "\U0001F4C8"
         down_emoji = "\U0001F4C9"
-        underscores = "_" * len(video_title) if video_title >= video_url else "_" * len(video_url)
+        light = "\U0001F6A8"
+        camera = "\U0001F3A5"
+        clock = "\U0001F552"
+        link = "\U0001F517"
+        time = "\U000023F3"
+        bar_chart = "\U0001F4CA"
 
         tweet = f"""
-PIRULLABOT 2.0
-AGORA CONSIDERANDO AS LIVES
-ULTIMO VÍDEO
-Título: {video_title}
-Duração: {formated_duration}
-Url: {video_url}
+{light} VÍDEO NOVO {light}
+{camera} Título: {video_title}
+{clock} Duração: {formated_duration}
+{link} Url: {video_url}
 {underscores}
-1 Pirulla: {formated_average}
-Variação {up_emoji if variation_time >= 0 else down_emoji} {formated_percentage_variation} ({'+' if variation_time > 0 else '-'}{formated_variation_time})
+{time} 1 Pirulla: {formated_average}
+{bar_chart} Variação {up_emoji if variation_time >= 0 else down_emoji} {formated_percentage_variation} ({'+' if variation_time > 0 else '-'}{formated_variation_time})
 """
         return tweet
 
@@ -137,7 +116,7 @@ Variação {up_emoji if variation_time >= 0 else down_emoji} {formated_percentag
             tweet: The tweet to post.
         """
 
-        print("Posting tweet.")
+        self.logger.info("Posting tweet.")
         api_key, api_secret, access_token, access_token_secret, bearer_token = self.config.get_twitter_keys()
 
         auth = tweepy.OAuthHandler(api_key, api_secret)
