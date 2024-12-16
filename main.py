@@ -18,7 +18,12 @@ def main() -> None:
     youtube_api = YoutubeAPI(config)
     pirulla_bot = PirullaBot(youtube_api, config)
 
-    logger.info(f"Bot started: {datetime.now()}")
+    mode_log = ''
+    match config.MODE:
+        case 'dev':
+            mode_log = 'DEV MODE\n'
+
+    logger.info(f"{mode_log}Bot started: {datetime.now()}")
     while True:
         logger.info(f"Bot running: {datetime.now()}")
         pirulla_bot.start()

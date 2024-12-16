@@ -520,7 +520,7 @@ wheels = [
 
 [[package]]
 name = "pirulla-bot"
-version = "2.0.0"
+version = "2.0.1"
 source = { virtual = "." }
 dependencies = [
     { name = "google-api-python-client" },

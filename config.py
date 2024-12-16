@@ -25,11 +25,10 @@ class Config:
         )
 
     def wait(self, logger, max_minutes=360, min_minutes=120):
-        mode_to_wait_time = {
-            'dev': 5,
-            'prod': randint(min_minutes * 60, max_minutes * 60),
-        }
-        wait_time = mode_to_wait_time.get(self.MODE, 5)
+        wait_time = 5
+        match self.MODE:
+            case 'prod':
+                wait_time = randint(min_minutes * 60, max_minutes * 60)
         logger.info(f"Recheck in {self.format_time(wait_time)}")
         time.sleep(wait_time)
 

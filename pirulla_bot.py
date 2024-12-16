@@ -13,29 +13,30 @@ class PirullaBot:
         self.config = config
 
     def start(self):
-
         required_verifications = self.config.REQUIRED_VERIFICATIONS
-        for verification in range(required_verifications):
+        verification = 0
+        while verification < required_verifications:
             stored_data = self.youtube_api.get_stored_data()
             channel_data = self.youtube_api.generate_channel_data()
-            if stored_data.equals(channel_data):
+
+            differences = pd.concat([channel_data, stored_data]).drop_duplicates(keep=False)
+            differences = differences.reset_index(drop=True)
+            if differences.empty or differences is None:
+                self.logger.info("There are no updates")
+                return
+
+            video = differences.loc[0]
+            last_stored_video = stored_data.iloc[-1]
+
+            if video['publishedAt'] < last_stored_video['publishedAt']:
                 self.logger.info("There are no updates")
                 return
             self.logger.info("Seems like there are updates.")
             self.logger.info(f"Verifications: {verification + 1}/{required_verifications + 1}")
+            verification += 1
             self.config.wait(self.logger)
 
-        self.process_update(stored_data, channel_data)
-
-    def process_update(self, stored_data, channel_data):
-        differences = pd.concat([channel_data, stored_data]).drop_duplicates(keep=False)
-        differences = differences.reset_index(drop=True)
-        if differences.empty or differences is None:
-            return
-
         self.logger.info("There are updates")
-        video = differences.loc[0]
-        last_stored_video = stored_data.iloc[-1]
         last_video_mean = last_stored_video['currentMean']
         current_mean = video['currentMean']
         video_title = video['title']
@@ -45,7 +46,11 @@ class PirullaBot:
         self.create_variation_plot(new_channel_data)
         tweet = self.write_tweet(video_title, video_duration, video_url, last_video_mean, current_mean)
 
-        self.post_tweet(tweet)
+        match self.config.MODE:
+            case 'dev':
+                self.logger.info(tweet)
+            case 'prod':
+                self.post_tweet(tweet)
         self.youtube_api.store_data(new_channel_data)
 
     def create_variation_plot(self, channel_data):
