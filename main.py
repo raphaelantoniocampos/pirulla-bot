@@ -21,9 +21,11 @@ def main() -> None:
     mode_log = ""
     match config.MODE:
         case "dev":
-            mode_log = "DEV MODE\n"
+            mode_log = f"{'-'*10}DEV MODE{'-'*10}\nBot Starded: "
+        case "prod":
+            mode_log = "Bot starded: "
 
-    logger.info(f"{mode_log}Bot started: {datetime.now()}")
+    logger.info(f"{mode_log}{datetime.now()}")
     while True:
         logger.info(f"Bot running: {datetime.now()}")
         pirulla_bot.start()
