@@ -9,25 +9,28 @@ class Config:
         load_dotenv()
         self.DEVELOPER_KEY = os.getenv("DEVELOPER_KEY")
         self.CHANNEL_ID = os.getenv("CHANNEL_ID")
-        self.REQUIRED_VERIFICATIONS = 2
         self.TWITTER_API_KEY = os.getenv("TWITTER_API_KEY")
         self.API_SECRET_KEY = os.getenv("TWITTER_API_SECRET")
         self.ACCESS_TOKEN = os.getenv("ACCESS_TOKEN")
         self.ACCESS_SECRET_TOKEN = os.getenv("ACCESS_SECRET_TOKEN")
         self.BEARER_TOKEN = os.getenv("BEARER_TOKEN")
         self.BEARER_TOKEN = os.getenv("BEARER_TOKEN")
-        self.MODE = 'prod' if os.getenv("MODE") == 'prod' else 'dev'
+        self.MODE = "prod" if os.getenv("MODE") == "prod" else "dev"
+        self.REQUIRED_VERIFICATIONS = 2 if self.MODE == "prod" else 0
 
     def get_twitter_keys(self):
         return (
-            self.TWITTER_API_KEY, self.API_SECRET_KEY, self.ACCESS_TOKEN,
-            self.ACCESS_SECRET_TOKEN, self.BEARER_TOKEN
+            self.TWITTER_API_KEY,
+            self.API_SECRET_KEY,
+            self.ACCESS_TOKEN,
+            self.ACCESS_SECRET_TOKEN,
+            self.BEARER_TOKEN,
         )
 
     def wait(self, logger, max_minutes=360, min_minutes=120):
         wait_time = 5
         match self.MODE:
-            case 'prod':
+            case "prod":
                 wait_time = randint(min_minutes * 60, max_minutes * 60)
         logger.info(f"Recheck in {self.format_time(wait_time)}")
         time.sleep(wait_time)

@@ -19,7 +19,11 @@ class PirullaBot:
             stored_data = self.youtube_api.get_stored_data()
             channel_data = self.youtube_api.generate_channel_data()
 
-            differences = pd.concat([channel_data, stored_data]).drop_duplicates(keep=False)
+            print(f"\nStored \n{stored_data.tail(5)}")
+            print(f"\nChannel \n{channel_data.tail(5)}")
+            differences = pd.concat([channel_data, stored_data]).drop_duplicates(
+                keep=False
+            )
             differences = differences.reset_index(drop=True)
             if differences.empty or differences is None:
                 self.logger.info("There are no updates")
@@ -28,28 +32,34 @@ class PirullaBot:
             video = differences.loc[0]
             last_stored_video = stored_data.iloc[-1]
 
-            if video['publishedAt'] < last_stored_video['publishedAt']:
+            if video["publishedAt"] < last_stored_video["publishedAt"]:
                 self.logger.info("There are no updates")
                 return
             self.logger.info("Seems like there are updates.")
-            self.logger.info(f"Verifications: {verification + 1}/{required_verifications + 1}")
+            self.logger.info(
+                f"Verifications: {verification + 1}/{required_verifications + 1}"
+            )
             verification += 1
             self.config.wait(self.logger)
 
         self.logger.info("There are updates")
-        last_video_mean = last_stored_video['currentMean']
-        current_mean = video['currentMean']
-        video_title = video['title']
-        video_duration = video['duration']
-        video_url = video['url']
-        new_channel_data = pd.concat([stored_data, video.to_frame().T], ignore_index=True)
+        last_video_mean = last_stored_video["currentMean"]
+        current_mean = video["currentMean"]
+        video_title = video["title"]
+        video_duration = video["duration"]
+        video_url = video["url"]
+        new_channel_data = pd.concat(
+            [stored_data, video.to_frame().T], ignore_index=True
+        )
         self.create_variation_plot(new_channel_data)
-        tweet = self.write_tweet(video_title, video_duration, video_url, last_video_mean, current_mean)
+        tweet = self.write_tweet(
+            video_title, video_duration, video_url, last_video_mean, current_mean
+        )
 
         match self.config.MODE:
-            case 'dev':
+            case "dev":
                 self.logger.info(tweet)
-            case 'prod':
+            case "prod":
                 self.post_tweet(tweet)
         self.youtube_api.store_data(new_channel_data)
 
@@ -58,15 +68,17 @@ class PirullaBot:
         Creates a plot of the variation of the Pirulla average over time and saves it at 'pirulla_plot.png'.
         """
         # Garantir que 'publishedAt' é convertido para datetime
-        channel_data['publishedAt'] = pd.to_datetime(channel_data['publishedAt'], errors='coerce')
+        channel_data["publishedAt"] = pd.to_datetime(
+            channel_data["publishedAt"], errors="coerce"
+        )
 
         # Remover linhas com datas inválidas
-        channel_data = channel_data.dropna(subset=['publishedAt'])
+        channel_data = channel_data.dropna(subset=["publishedAt"])
 
         # Preparar os dados para o gráfico
-        channel_data = channel_data.sort_values(by='publishedAt')
-        dates = channel_data['publishedAt']
-        means = channel_data['currentMean'] / 60
+        channel_data = channel_data.sort_values(by="publishedAt")
+        dates = channel_data["publishedAt"]
+        means = channel_data["currentMean"] / 60
 
         fig = plt.figure(dpi=120, figsize=(10, 6))
         plt.grid()
@@ -82,25 +94,33 @@ class PirullaBot:
         plt.savefig("./data/pirulla_plot.png", bbox_inches="tight")
         plt.close()
 
-    def write_tweet(self, video_title, video_duration, video_url, last_video_mean, current_mean) -> str:
+    def write_tweet(
+        self, video_title, video_duration, video_url, last_video_mean, current_mean
+    ) -> str:
         variation_time = current_mean - last_video_mean
-        percentage_variation = self.get_percentage_variation(variation_time, last_video_mean)
+        percentage_variation = self.get_percentage_variation(
+            variation_time, last_video_mean
+        )
 
         formated_average = self.config.format_time(current_mean)
         formated_variation_time = self.config.format_time(variation_time)
-        formated_percentage_variation = self.format_percentage_variation(percentage_variation)
+        formated_percentage_variation = self.format_percentage_variation(
+            percentage_variation
+        )
         formated_duration = self.config.format_time(video_duration)
 
         # Emojis
-        underscores = "_" * len(video_title) if video_title >= video_url else "_" * len(video_url)
-        up_emoji = "\U0001F4C8"
-        down_emoji = "\U0001F4C9"
-        light = "\U0001F6A8"
-        camera = "\U0001F3A5"
-        clock = "\U0001F552"
-        link = "\U0001F517"
-        time = "\U000023F3"
-        bar_chart = "\U0001F4CA"
+        underscores = (
+            "_" * len(video_title) if video_title >= video_url else "_" * len(video_url)
+        )
+        up_emoji = "\U0001f4c8"
+        down_emoji = "\U0001f4c9"
+        light = "\U0001f6a8"
+        camera = "\U0001f3a5"
+        clock = "\U0001f552"
+        link = "\U0001f517"
+        time = "\U000023f3"
+        bar_chart = "\U0001f4ca"
 
         tweet = f"""
 {light} VÍDEO NOVO {light}
@@ -122,7 +142,9 @@ class PirullaBot:
         """
 
         self.logger.info("Posting tweet.")
-        api_key, api_secret, access_token, access_token_secret, bearer_token = self.config.get_twitter_keys()
+        api_key, api_secret, access_token, access_token_secret, bearer_token = (
+            self.config.get_twitter_keys()
+        )
 
         auth = tweepy.OAuthHandler(api_key, api_secret)
         auth.set_access_token(access_token, access_token_secret)
