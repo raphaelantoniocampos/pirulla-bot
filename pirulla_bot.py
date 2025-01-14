@@ -1,9 +1,9 @@
-import os
 import logging
+import os
 
-from matplotlib import pyplot as plt
-import tweepy
 import pandas as pd
+import tweepy
+from matplotlib import pyplot as plt
 
 
 class PirullaBot:
@@ -129,7 +129,7 @@ class PirullaBot:
 {link} Url: {video_url}
 {underscores}
 {time} 1 Pirulla: {formated_average}
-{bar_chart} Variação {up_emoji if variation_time >= 0 else down_emoji} {formated_percentage_variation} ({'+' if variation_time > 0 else '-'}{formated_variation_time})
+{bar_chart} Variação {up_emoji if variation_time >= 0 else down_emoji} {formated_percentage_variation} ({"+" if variation_time > 0 else "-"}{formated_variation_time})
 """
         return tweet
 
