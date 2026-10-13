@@ -1,0 +1,66 @@
+name: Publish the site
+
+on:
+  schedule:
+    # Every 30 minutes, away from the top of the hour, when scheduled runs are delayed the most.
+    - cron: "7,37 * * * *"
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  # To commit site/data.json.
+  contents: write
+  pages: write
+  id-token: write
+
+# A run that is publishing is allowed to finish before the next one starts.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: Swatinem/rust-cache@v2
+      - name: Test
+        if: github.event_name != 'schedule'
+        run: |
+          cargo test --locked
+          npm test
+      # When this fails nothing is published, and the site keeps the data it had.
+      - name: Read the channel and write site/data.json
+        run: cargo run --release --locked
+        env:
+          DEVELOPER_KEY: ${{ secrets.DEVELOPER_KEY }}
+          CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+      # Committed when the videos change, not on every run: the time of generation is left out of the comparison.
+      - name: Keep the history of the data
+        run: |
+          previous=$(git show HEAD:site/data.json 2>/dev/null | grep -v '^"generatedAt":' || true)
+          current=$(grep -v '^"generatedAt":' site/data.json)
+          if [ "$previous" = "$current" ]; then
+            echo "The videos did not change."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/data.json
+          git commit --quiet -m "Update the channel data"
+          git push --quiet || { git pull --quiet --rebase && git push --quiet; }
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
