@@ -6,11 +6,12 @@ import {
   formatDate,
   formatDateTime,
   formatDuration,
+  formatKind,
   formatPercent,
   formatTotal,
   formatVariation,
 } from './js/format.js';
-import { groupByPeriod, lastYears, prepare, summarize } from './js/stats.js';
+import { groupByPeriod, lastYears, ofKinds, prepare, summarize, withRate } from './js/stats.js';
 import { MAX_TWEET_LENGTH, composeTweet, intentUrl, weightedLength } from './js/tweet.js';
 
 const DATA_URL = 'data.json';
@@ -49,13 +50,25 @@ function variationNode(video) {
 /** A table cell. On a narrow screen the rows are stacked and `label` says what the cell holds. */
 function cell(className, content, label) {
   const element = node('td', className);
-  element.append(content);
+  element.append(...[content].flat());
   if (label) element.dataset.label = label;
   return element;
 }
 
-function fillSummary(data, videos) {
+/** The headline and the tiles, for the videos that count. */
+function fillSummary(videos) {
   const latest = videos.at(-1);
+  if (!latest) {
+    byId('rate').textContent = '—';
+    byId('rate-ms').textContent = '';
+    byId('delta').replaceChildren();
+    byId('last-video').textContent = 'Nenhum vídeo entra na cotação com este filtro.';
+    for (const tile of ['count', 'total', 'longest']) {
+      byId(`tile-${tile}`).textContent = '—';
+      byId(`tile-${tile}-note`).replaceChildren();
+    }
+    return;
+  }
   const [rate, milliseconds] = formatDuration(latest.mean, { milliseconds: true }).split(/ (?=\d+ms$)/);
   byId('rate').textContent = rate;
   byId('rate-ms').textContent = milliseconds;
@@ -73,9 +86,12 @@ function fillSummary(data, videos) {
   byId('tile-total-note').textContent = `${formatCount(Math.round(summary.total / 3600))} horas de vídeo`;
   byId('tile-longest').textContent = formatDuration(summary.longest.duration);
   byId('tile-longest-note').replaceChildren(link(summary.longest.url, summary.longest.title));
+}
 
-  byId('channel-link').href = `https://www.youtube.com/channel/${encodeURIComponent(data.channelId)}`;
-  byId('updated').textContent = `Atualizado em ${formatDateTime(Date.parse(data.generatedAt))}.`;
+/** The title of a video, linked, with a mark when it is a live or a short. */
+function titleNodes(video) {
+  const kind = formatKind(video.kind);
+  return kind ? [link(video.url, video.title), node('span', 'tag', kind)] : [link(video.url, video.title)];
 }
 
 function fillPeriodTable(groups) {
@@ -104,7 +120,7 @@ function videoTable() {
       const row = node('tr');
       row.append(
         cell('date', formatDate(video.time)),
-        cell('title', link(video.url, video.title)),
+        cell('title', titleNodes(video)),
         cell('num', formatDuration(video.duration), 'Duração'),
         cell('num', formatDuration(video.mean, { milliseconds: true }), 'Cotação'),
         cell('num', variationNode(video)),
@@ -133,8 +149,13 @@ function videoTable() {
   };
 }
 
-/** The dialog with the post announcing `video`, which can be edited, copied or opened in X. */
-function tweetDialog(video) {
+/**
+ * The dialog with the post announcing a video, which can be edited, copied or
+ * opened in X. `update(video)` sets the video to announce; without one, the
+ * button that opens the dialog is hidden.
+ */
+function tweetDialog() {
+  let video = null;
   const dialog = byId('tweet-dialog');
   const text = byId('tweet-text');
   const count = byId('tweet-count');
@@ -174,16 +195,22 @@ function tweetDialog(video) {
   dialog.addEventListener('click', (event) => {
     if (event.target === dialog) dialog.close();
   });
-  open.hidden = false;
+  return {
+    update(next) {
+      video = next;
+      open.hidden = !next;
+    },
+  };
 }
 
 function render(data) {
   const videos = prepare(data.videos);
   if (!videos.length) throw new Error('the data file has no videos');
   const now = Date.parse(data.generatedAt);
-  fillSummary(data, videos);
-  tweetDialog(videos.at(-1));
+  byId('channel-link').href = `https://www.youtube.com/channel/${encodeURIComponent(data.channelId)}`;
+  byId('updated').textContent = `Atualizado em ${formatDateTime(now)}.`;
 
+  const tweet = tweetDialog();
   const rate = createChart(byId('rate-chart'), { label: 'Gráfico da cotação ao longo do tempo', paint: paintRate });
   const durations = createChart(byId('videos-chart'), {
     label: 'Gráfico da duração de cada vídeo',
@@ -193,9 +220,14 @@ function render(data) {
   const periods = createChart(byId('period-chart'), { label: 'Gráfico da duração média por período', paint: paintPeriods });
   const table = videoTable();
 
-  // The period filter scopes every chart and table below it.
-  function show(years) {
-    const selected = lastYears(videos, years, now);
+  // What counts scopes the whole page; the period, the charts and the table below it.
+  function show() {
+    const counted = withRate(ofKinds(videos, { lives: byId('count-lives').checked, shorts: byId('count-shorts').checked }));
+    fillSummary(counted);
+    tweet.update(counted.at(-1) ?? null);
+
+    const range = document.querySelector('input[name="range"]:checked').value;
+    const selected = lastYears(counted, range === 'all' ? null : Number(range), now);
     const span = selected.length ? selected.at(-1).time - selected[0].time : 0;
     const period = span < MONTHLY_SPAN ? 'month' : 'year';
     const groups = groupByPeriod(selected, period);
@@ -208,11 +240,8 @@ function render(data) {
     table.update(selected);
   }
 
-  for (const input of document.querySelectorAll('input[name="range"]')) {
-    input.addEventListener('change', () => show(input.value === 'all' ? null : Number(input.value)));
-  }
-  const checked = document.querySelector('input[name="range"]:checked');
-  show(checked.value === 'all' ? null : Number(checked.value));
+  for (const input of document.querySelectorAll('.filters input')) input.addEventListener('change', show);
+  show();
 }
 
 async function main() {

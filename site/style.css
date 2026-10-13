@@ -252,6 +252,11 @@ h2 {
   outline-offset: 2px;
 }
 
+/* Each of these is on or off by itself, so the ones that are on carry a check mark. */
+.toggles input:checked + span::before {
+  content: "✓ ";
+}
+
 /* Charts */
 
 figcaption p,
@@ -495,6 +500,18 @@ td.date {
 td.title {
   min-width: 220px;
   overflow-wrap: anywhere;
+}
+
+/* Marks a live or a short beside its title. */
+.tag {
+  margin-left: 6px;
+  padding: 1px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--ink-2);
+  white-space: nowrap;
 }
 
 td.empty {

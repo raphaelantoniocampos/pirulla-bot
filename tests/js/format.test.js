@@ -7,6 +7,7 @@ import {
   formatDateTime,
   formatDuration,
   formatDurationShort,
+  formatKind,
   formatPercent,
   formatTotal,
   formatVariation,
@@ -81,4 +82,10 @@ test('counts use the Brazilian thousands separator', () => {
 test('a long total is shown in days', () => {
   assert.equal(formatTotal(37 * 3600 + 12 * 60), '37h 12min');
   assert.equal(formatTotal(26 * 86400 + 18 * 3600 + 1200), '26 dias 18h');
+});
+
+test('lives and shorts are named; regular videos need no name', () => {
+  assert.equal(formatKind('live'), 'live');
+  assert.equal(formatKind('short'), 'short');
+  assert.equal(formatKind('video'), '');
 });

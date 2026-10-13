@@ -5,6 +5,7 @@ import {
   formatDate,
   formatDuration,
   formatDurationShort,
+  formatKind,
   formatPercent,
   formatTotal,
   formatVariation,
@@ -309,7 +310,7 @@ export function paintVideos(svg, videos, size) {
           { key: 'dot s2', value: formatDuration(video.duration), label: 'Duração' },
           { key: 'line s1', value: formatDuration(video.mean), label: 'Cotação na data' },
         ],
-        note: formatDate(video.time),
+        note: [formatDate(video.time), formatKind(video.kind)].filter(Boolean).join(' · '),
       };
     },
     open(index) {

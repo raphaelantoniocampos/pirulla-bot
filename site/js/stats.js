@@ -6,21 +6,38 @@ const MONTHS = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', '
 
 const yearAndMonth = new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE, year: 'numeric', month: '2-digit' });
 
-/** Turns the videos of the data file into what the page plots. They must be in order of publication. */
+/** Turns the videos of the data file into what the page works with. */
 export function prepare(videos) {
+  return videos.map((video) => ({
+    id: video.id,
+    title: video.title,
+    time: Date.parse(video.publishedAt),
+    duration: video.duration,
+    kind: video.kind ?? 'video',
+    url: `https://www.youtube.com/watch?v=${video.id}`,
+  }));
+}
+
+/** The videos that count: the regular ones always, the lives and the shorts when asked for. */
+export function ofKinds(videos, { lives, shorts }) {
+  return videos.filter((video) => video.kind === 'video' || (video.kind === 'live' ? lives : shorts));
+}
+
+/**
+ * Gives each video the rate at the time: the average duration, in seconds, of
+ * the videos up to it, and how much it moved that average. The videos must be
+ * in order of publication.
+ */
+export function withRate(videos) {
+  let total = 0;
+  let previousMean = null;
   return videos.map((video, index) => {
-    const previousMean = index ? videos[index - 1].mean : video.mean;
-    const variation = video.mean - previousMean;
-    return {
-      id: video.id,
-      title: video.title,
-      time: Date.parse(video.publishedAt),
-      duration: video.duration,
-      mean: video.mean,
-      variation,
-      variationPercent: previousMean ? (variation / previousMean) * 100 : 0,
-      url: `https://www.youtube.com/watch?v=${video.id}`,
-    };
+    total += video.duration;
+    const mean = Math.round((total / (index + 1)) * 100) / 100;
+    const variation = previousMean === null ? 0 : mean - previousMean;
+    const variationPercent = previousMean ? (variation / previousMean) * 100 : 0;
+    previousMean = mean;
+    return { ...video, mean, variation, variationPercent };
   });
 }
 

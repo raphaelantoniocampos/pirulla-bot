@@ -86,3 +86,8 @@ export function formatTotal(seconds) {
   if (hours < 48) return `${hours}h ${pad(Math.floor((seconds % 3600) / 60))}min`;
   return `${formatCount(Math.floor(hours / 24))} dias ${hours % 24}h`;
 }
+
+/** What a video is, when it is not a regular one: "live" or "short". */
+export function formatKind(kind) {
+  return kind === 'live' || kind === 'short' ? kind : '';
+}

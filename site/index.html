@@ -28,13 +28,21 @@
       <header class="masthead">
         <h1>Cotação do Pirulla</h1>
         <p class="lede">
-          O <strong>Pirulla</strong> é a unidade de tempo que equivale à duração média de todos os vídeos do
+          O <strong>Pirulla</strong> é a unidade de tempo que equivale à duração média dos vídeos do
           <a id="channel-link" href="https://www.youtube.com/" target="_blank" rel="noopener">canal do Pirulla</a>.
           A cada vídeo novo, a cotação muda.
         </p>
       </header>
 
       <p id="status" class="status" role="status" hidden></p>
+
+      <div class="filters">
+        <span id="kinds-label" class="label">Além dos vídeos, entram na cotação</span>
+        <div class="options toggles" role="group" aria-labelledby="kinds-label">
+          <label><input type="checkbox" id="count-lives" /><span>Lives</span></label>
+          <label><input type="checkbox" id="count-shorts" checked /><span>Shorts</span></label>
+        </div>
+      </div>
 
       <section class="card hero" aria-labelledby="hero-label">
         <p id="hero-label" class="label">1 Pirulla vale hoje</p>
@@ -46,7 +54,7 @@
 
       <section class="tiles" aria-label="Números do canal">
         <div class="card tile">
-          <p class="label">Vídeos no canal</p>
+          <p class="label">Vídeos na cotação</p>
           <p id="tile-count" class="tile-value">—</p>
           <p id="tile-count-note" class="tile-note"></p>
         </div>
@@ -75,7 +83,7 @@
       <figure class="card">
         <figcaption>
           <h2>Cotação ao longo do tempo</h2>
-          <p>Duração média de todos os vídeos publicados até cada data.</p>
+          <p>Duração média dos vídeos publicados até cada data.</p>
         </figcaption>
         <div id="rate-chart" class="chart"></div>
         <p class="table-link"><a href="#videos">Ver como tabela</a></p>
