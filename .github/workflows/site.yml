@@ -34,7 +34,7 @@ jobs:
       - name: Read the channel and write site/data.json
         run: cargo run --release --locked
         env:
-          DEVELOPER_KEY: ${{ secrets.DEVELOPER_KEY }}
+          DEVELOPER_KEY: ${{ secrets.YOUTUBE_DEVELOPER_KEY }}
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
       # Committed when the videos change, not on every run: the time of generation is left out of the comparison.
       - name: Keep the history of the data

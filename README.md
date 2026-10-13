@@ -44,7 +44,7 @@ and open http://localhost:8000. The page has to be served: opened straight from 
 
 `.github/workflows/site.yml` runs the generator every 30 minutes and publishes `site/` to GitHub Pages. Whenever the videos change it also commits `site/data.json`, so the history of the repository keeps every state the channel has been in. To turn it on:
 
-1. In the repository settings, under *Secrets and variables → Actions*, add the secrets `DEVELOPER_KEY` and `CHANNEL_ID`.
+1. In the repository settings, under *Secrets and variables → Actions*, add the secrets `YOUTUBE_DEVELOPER_KEY`, with the key that goes in `DEVELOPER_KEY`, and `CHANNEL_ID`.
 2. Under *Pages*, set the source to *GitHub Actions*.
 3. Push to `master`.
 
