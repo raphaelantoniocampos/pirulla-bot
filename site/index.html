@@ -41,6 +41,7 @@
         <p class="hero-value"><span id="rate">—</span> <span id="rate-ms" class="ms"></span></p>
         <p id="delta" class="hero-delta"></p>
         <p id="last-video" class="hero-note"></p>
+        <p class="hero-actions"><button id="tweet-open" class="button" type="button" hidden>Gerar tweet</button></p>
       </section>
 
       <section class="tiles" aria-label="Números do canal">
@@ -133,7 +134,7 @@
             <tbody id="video-rows"></tbody>
           </table>
         </div>
-        <button id="more" class="more" type="button" hidden>Mostrar mais</button>
+        <button id="more" class="button more" type="button" hidden>Mostrar mais</button>
       </section>
 
       <footer>
@@ -144,5 +145,19 @@
         </p>
       </footer>
     </main>
+
+    <dialog id="tweet-dialog" aria-labelledby="tweet-title">
+      <form method="dialog" class="dialog-body">
+        <h2 id="tweet-title">Tweet do último vídeo</h2>
+        <p class="dialog-note">Ajuste o texto se quiser, depois copie ou abra o X com ele já escrito.</p>
+        <textarea id="tweet-text" rows="9" spellcheck="false" aria-label="Texto do tweet" aria-describedby="tweet-count"></textarea>
+        <p id="tweet-count" class="dialog-note" role="status"></p>
+        <div class="dialog-actions">
+          <button class="button quiet">Fechar</button>
+          <button id="tweet-copy" class="button" type="button" autofocus>Copiar texto</button>
+          <a id="tweet-post" class="button primary" target="_blank" rel="noopener">Postar no X</a>
+        </div>
+      </form>
+    </dialog>
   </body>
 </html>

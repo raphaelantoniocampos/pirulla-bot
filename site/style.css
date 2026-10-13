@@ -39,6 +39,11 @@
   box-sizing: border-box;
 }
 
+/* Otherwise any rule that sets `display` would show what is meant to be hidden. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   -webkit-text-size-adjust: 100%;
   scroll-behavior: smooth;
@@ -409,10 +414,6 @@ figcaption p {
   pointer-events: none;
 }
 
-.tooltip[hidden] {
-  display: none;
-}
-
 .tooltip-title {
   margin-bottom: 4px;
   font-weight: 600;
@@ -502,8 +503,8 @@ td.empty {
   color: var(--ink-2);
 }
 
-.more {
-  margin-top: 16px;
+.button {
+  display: inline-block;
   padding: 8px 16px;
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -511,11 +512,91 @@ td.empty {
   color: var(--ink);
   font: inherit;
   font-size: 0.875rem;
+  line-height: 1.4;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
 }
 
-.more:hover {
+.button:hover {
   background: var(--page);
+}
+
+.button.primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--surface);
+}
+
+.button.primary:hover {
+  background: var(--ink-2);
+  border-color: var(--ink-2);
+}
+
+.button.quiet {
+  border-color: transparent;
+  color: var(--ink-2);
+}
+
+.more {
+  margin-top: 16px;
+}
+
+.hero-actions {
+  margin-top: 16px;
+}
+
+/* The post to copy to X */
+
+dialog {
+  width: min(560px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 16px 48px var(--shadow);
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.dialog-body {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+
+.dialog-note {
+  font-size: 0.875rem;
+  color: var(--ink-2);
+}
+
+.dialog-note.over {
+  font-weight: 600;
+  color: var(--down);
+}
+
+textarea {
+  width: 100%;
+  min-height: 15em;
+  padding: 12px;
+  border: 1px solid var(--axis);
+  border-radius: 10px;
+  background: var(--page);
+  color: var(--ink);
+  /* 16px at least, or phones zoom in when the field is focused. */
+  font: inherit;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 /* On a narrow screen each video becomes a block: its title, then its numbers, wrapping as they fit. */

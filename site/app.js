@@ -11,6 +11,7 @@ import {
   formatVariation,
 } from './js/format.js';
 import { groupByPeriod, lastYears, prepare, summarize } from './js/stats.js';
+import { MAX_TWEET_LENGTH, composeTweet, intentUrl, weightedLength } from './js/tweet.js';
 
 const DATA_URL = 'data.json';
 const YEAR_MS = 365.25 * 86_400_000;
@@ -132,11 +133,56 @@ function videoTable() {
   };
 }
 
+/** The dialog with the post announcing `video`, which can be edited, copied or opened in X. */
+function tweetDialog(video) {
+  const dialog = byId('tweet-dialog');
+  const text = byId('tweet-text');
+  const count = byId('tweet-count');
+  const copy = byId('tweet-copy');
+  const open = byId('tweet-open');
+  // The address of the page without what comes after its directory.
+  const siteUrl = new URL('.', window.location.href).href;
+
+  function refresh() {
+    const length = weightedLength(text.value);
+    const tooLong = length > MAX_TWEET_LENGTH;
+    count.textContent = tooLong
+      ? `${length} de ${MAX_TWEET_LENGTH} caracteres: o X não aceita um texto deste tamanho.`
+      : `${length} de ${MAX_TWEET_LENGTH} caracteres, na contagem do X.`;
+    count.classList.toggle('over', tooLong);
+    copy.textContent = 'Copiar texto';
+    byId('tweet-post').href = intentUrl(text.value);
+  }
+
+  open.addEventListener('click', () => {
+    text.value = composeTweet(video, siteUrl);
+    refresh();
+    dialog.showModal();
+  });
+  text.addEventListener('input', refresh);
+  copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(text.value);
+      copy.textContent = 'Copiado!';
+    } catch {
+      // Without access to the clipboard, the text is left selected for the reader to copy.
+      text.select();
+      copy.textContent = 'Selecionado: copie com Ctrl+C';
+    }
+  });
+  // A click on the backdrop lands on the dialog itself.
+  dialog.addEventListener('click', (event) => {
+    if (event.target === dialog) dialog.close();
+  });
+  open.hidden = false;
+}
+
 function render(data) {
   const videos = prepare(data.videos);
   if (!videos.length) throw new Error('the data file has no videos');
   const now = Date.parse(data.generatedAt);
   fillSummary(data, videos);
+  tweetDialog(videos.at(-1));
 
   const rate = createChart(byId('rate-chart'), { label: 'Gráfico da cotação ao longo do tempo', paint: paintRate });
   const durations = createChart(byId('videos-chart'), {
