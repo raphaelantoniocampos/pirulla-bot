@@ -5,7 +5,7 @@ This project tracks the average length of the videos on the "Pirulla" YouTube ch
 It has two parts:
 
 - A generator, written in Rust, that reads every video of the channel from the YouTube Data API, computes the running average and writes `site/data.json`.
-- A static website in `site/`, in plain HTML, CSS and JavaScript with no dependencies, that loads that file and draws the interactive charts.
+- A static website in `site/`, in plain HTML, CSS and JavaScript with no dependencies, that loads that file and draws the interactive charts. Its "Gerar tweet" button writes the post announcing the latest video, to be copied or opened in X and posted by hand.
 
 The generator keeps no state. Every run rebuilds the whole file from what the channel has at that moment, and when a run fails the previous file is left untouched.
 
