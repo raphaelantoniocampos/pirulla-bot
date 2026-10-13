@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use anyhow::{Context, Result, bail};
+use reqwest::StatusCode;
 use reqwest::blocking::{Client, RequestBuilder, Response};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -20,24 +21,43 @@ pub(crate) fn client() -> Result<Client> {
 /// Errors describe `what` failed and why, but never include the request url,
 /// since it may carry credentials.
 pub(crate) fn send<T: DeserializeOwned>(request: RequestBuilder, what: &str) -> Result<T> {
-    let response = check(request, what)?;
-    response
-        .json()
-        .map_err(reqwest::Error::without_url)
-        .with_context(|| format!("{what} returned an unexpected response"))
+    decode(succeeded(respond(request, what)?, what)?, what)
 }
 
-fn check(request: RequestBuilder, what: &str) -> Result<Response> {
-    let response = request
+/// Like [`send`], but asking for something that does not exist (a 404) answers
+/// `None` instead of failing.
+pub(crate) fn send_optional<T: DeserializeOwned>(
+    request: RequestBuilder,
+    what: &str,
+) -> Result<Option<T>> {
+    let response = respond(request, what)?;
+    if response.status() == StatusCode::NOT_FOUND {
+        return Ok(None);
+    }
+    decode(succeeded(response, what)?, what).map(Some)
+}
+
+fn respond(request: RequestBuilder, what: &str) -> Result<Response> {
+    request
         .send()
         .map_err(reqwest::Error::without_url)
-        .with_context(|| format!("{what} failed"))?;
+        .with_context(|| format!("{what} failed"))
+}
+
+fn succeeded(response: Response, what: &str) -> Result<Response> {
     let status = response.status();
     if !status.is_success() {
         let reason = error_reason(&response.text().unwrap_or_default());
         bail!("{what} failed with status {status}: {reason}");
     }
     Ok(response)
+}
+
+fn decode<T: DeserializeOwned>(response: Response, what: &str) -> Result<T> {
+    response
+        .json()
+        .map_err(reqwest::Error::without_url)
+        .with_context(|| format!("{what} returned an unexpected response"))
 }
 
 /// The reason an API gave for refusing a request, taken from its response body.

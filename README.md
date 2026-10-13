@@ -4,8 +4,8 @@ This project tracks the average length of the videos on the "Pirulla" YouTube ch
 
 It has two parts:
 
-- A generator, written in Rust, that reads every video of the channel from the YouTube Data API, computes the running average and writes `site/data.json`.
-- A static website in `site/`, in plain HTML, CSS and JavaScript with no dependencies, that loads that file and draws the interactive charts. Its "Gerar tweet" button writes the post announcing the latest video, to be copied or opened in X and posted by hand.
+- A generator, written in Rust, that reads every video of the channel from the YouTube Data API, tells the lives and the shorts from the other videos and writes `site/data.json`.
+- A static website in `site/`, in plain HTML, CSS and JavaScript with no dependencies, that loads that file, computes the average and draws the interactive charts. Its "Gerar tweet" button writes the post announcing the latest video, to be copied or opened in X and posted by hand.
 
 The generator keeps no state. Every run rebuilds the whole file from what the channel has at that moment, and when a run fails the previous file is left untouched.
 
@@ -63,11 +63,13 @@ Neither uses the network. The Rust tests replace the YouTube API with a local fa
 
 ## 🗒️ Notes
 
-Each run costs about 2 units of the YouTube API quota for every 50 videos of the channel.
+Each run costs about 2 units of the YouTube API quota for every 50 videos of the channel, and 1 more for every 50 lives and shorts.
 
-`site/data.json` has the time it was generated, the id of the channel and, for every video in order of publication, its `id`, `title`, `publishedAt`, `duration` in seconds and `mean`, the average duration in seconds of all videos published up to it. It is written with one video per line, so that a new video is a new line in the history of the file.
+By default the average leaves the lives out and counts the shorts; the page has a switch for each. YouTube has no field that says what a video is, so the generator reads the two playlists YouTube keeps with only the lives and only the shorts of a channel, the same that fill the tabs of the channel page. Their ids are the id of the channel with `UULV` or `UUSH` in the place of its leading `UC`. These playlists are not part of the documented API: if they ever stop existing, every video is taken for a regular one.
 
-The website always shows the channel as it is now: a video that is removed from the channel leaves the next file, and the averages after it change. What the file had before stays in the history of the repository.
+`site/data.json` has the time it was generated, the id of the channel and, for every video in order of publication, its `id`, `title`, `publishedAt`, `duration` in seconds and `kind` (`video`, `live` or `short`). It is written with one video per line, so that a new video is a new line in the history of the file.
+
+The website always shows the channel as it is now: a video that is removed from the channel leaves the next file, and the average is computed without it. What the file had before stays in the history of the repository.
 
 ## 🖇️ Contributing
 If you would like to contribute to this project, please feel free to open an issue or pull request.

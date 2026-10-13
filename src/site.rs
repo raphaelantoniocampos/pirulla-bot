@@ -6,7 +6,7 @@ use anyhow::{Context, Result, bail};
 use chrono::{DateTime, SubsecRound, Utc};
 use serde::Serialize;
 
-use crate::series::{VideoRecord, build_series};
+use crate::series::{Video, timeline};
 use crate::youtube::VideoSource;
 
 /// Everything the website shows.
@@ -15,7 +15,7 @@ use crate::youtube::VideoSource;
 pub struct SiteData {
     pub generated_at: DateTime<Utc>,
     pub channel_id: String,
-    pub videos: Vec<VideoRecord>,
+    pub videos: Vec<Video>,
 }
 
 /// Reads the channel `channel_id` from `source` and writes the data file of the website to `output`.
@@ -28,7 +28,7 @@ pub fn generate(
     now: DateTime<Utc>,
     output: &Path,
 ) -> Result<SiteData> {
-    let videos = build_series(&source.fetch_videos()?);
+    let videos = timeline(&source.fetch_videos()?);
     if videos.is_empty() {
         bail!("the channel returned no videos");
     }
@@ -87,7 +87,7 @@ fn write_json(data: &SiteData, writer: &mut impl Write) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::series::Video;
+    use crate::series::{Video, VideoKind};
     use anyhow::anyhow;
     use chrono::TimeZone;
     use std::fs;
@@ -110,6 +110,7 @@ mod tests {
             title: title.to_string(),
             published_at: day(day_of_month),
             duration,
+            kind: VideoKind::Video,
         }
     }
 
@@ -121,7 +122,7 @@ mod tests {
     }
 
     #[test]
-    fn writes_the_videos_with_the_running_mean_one_per_line() {
+    fn writes_the_videos_in_order_of_publication_one_per_line() {
         let dir = tempfile::tempdir().unwrap();
         let output = dir.path().join("data.json");
 
@@ -133,8 +134,8 @@ mod tests {
 "generatedAt":"2024-01-10T12:00:00Z",
 "channelId":"UCchannel",
 "videos":[
-{"id":"a","title":"Vídeo a","publishedAt":"2024-01-01T12:00:00Z","duration":100,"mean":100.0},
-{"id":"b","title":"Vídeo \"b\"","publishedAt":"2024-01-02T12:00:00Z","duration":200,"mean":150.0}
+{"id":"a","title":"Vídeo a","publishedAt":"2024-01-01T12:00:00Z","duration":100,"kind":"video"},
+{"id":"b","title":"Vídeo \"b\"","publishedAt":"2024-01-02T12:00:00Z","duration":200,"kind":"video"}
 ]
 }
 "#
@@ -168,7 +169,7 @@ mod tests {
         assert_eq!(data.generated_at, day(10));
         assert_eq!(data.channel_id, "UCchannel");
         assert_eq!(data.videos.len(), 2);
-        assert_eq!(data.videos[1].mean, 150.0);
+        assert_eq!(data.videos[1].id, "b");
     }
 
     #[test]

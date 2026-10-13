@@ -33,26 +33,6 @@ fn parse_components(part: &str, units: &[(char, u64)]) -> Option<u64> {
     number.is_none().then_some(total)
 }
 
-/// Formats a number of seconds as `01h:02min:03s:004ms`, omitting the hours
-/// and minutes when they are zero. The sign is dropped.
-pub fn format_time(seconds: f64) -> String {
-    let total_ms = (seconds.abs() * 1000.0).round() as u64;
-    let hours = total_ms / 3_600_000;
-    let minutes = total_ms % 3_600_000 / 60_000;
-    let seconds = total_ms % 60_000 / 1_000;
-    let milliseconds = total_ms % 1_000;
-
-    let mut formatted = String::new();
-    if hours != 0 {
-        formatted.push_str(&format!("{hours:02}h:"));
-    }
-    if minutes != 0 {
-        formatted.push_str(&format!("{minutes:02}min:"));
-    }
-    formatted.push_str(&format!("{seconds:02}s:{milliseconds:03}ms"));
-    formatted
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -93,29 +73,5 @@ mod tests {
         ] {
             assert_eq!(parse_iso8601_duration(input), None, "input: {input:?}");
         }
-    }
-
-    #[test]
-    fn formats_minutes_seconds_and_milliseconds() {
-        assert_eq!(format_time(1513.45), "25min:13s:450ms");
-    }
-
-    #[test]
-    fn formats_hours_only_when_present() {
-        assert_eq!(format_time(3723.0), "01h:02min:03s:000ms");
-        assert_eq!(format_time(3605.0), "01h:05s:000ms");
-        assert_eq!(format_time(45.0), "45s:000ms");
-        assert_eq!(format_time(0.0), "00s:000ms");
-    }
-
-    #[test]
-    fn drops_the_sign() {
-        assert_eq!(format_time(-1.3), "01s:300ms");
-    }
-
-    #[test]
-    fn rounds_milliseconds_instead_of_truncating_float_noise() {
-        assert_eq!(format_time(1513.29), "25min:13s:290ms");
-        assert_eq!(format_time(1513.75 - 1513.45), "00s:300ms");
     }
 }

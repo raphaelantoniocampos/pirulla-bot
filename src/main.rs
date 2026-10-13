@@ -6,7 +6,7 @@ use chrono::Utc;
 use log::{error, info};
 
 use pirulla_bot::config::Config;
-use pirulla_bot::duration::format_time;
+use pirulla_bot::series::VideoKind;
 use pirulla_bot::site::generate;
 use pirulla_bot::youtube::YoutubeClient;
 
@@ -40,12 +40,19 @@ fn run() -> Result<()> {
     }
 
     let data = generate(&youtube, &config.channel_id, Utc::now(), &output)?;
-    let current_mean = data.videos.last().map_or(0.0, |video| video.mean);
+    let count = |kind| {
+        data.videos
+            .iter()
+            .filter(|video| video.kind == kind)
+            .count()
+    };
     info!(
-        "Wrote {} videos to {}: 1 Pirulla = {}",
+        "Wrote {} videos to {} (regular: {}, lives: {}, shorts: {})",
         data.videos.len(),
         output.display(),
-        format_time(current_mean)
+        count(VideoKind::Video),
+        count(VideoKind::Live),
+        count(VideoKind::Short)
     );
     Ok(())
 }

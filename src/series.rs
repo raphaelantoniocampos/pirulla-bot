@@ -3,55 +3,40 @@ use std::collections::HashSet;
 use chrono::{DateTime, Utc};
 use serde::Serialize;
 
-/// A video as it comes from the channel.
-#[derive(Debug, Clone, PartialEq)]
+/// What YouTube lists a video as.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum VideoKind {
+    /// A regular upload.
+    Video,
+    /// A broadcast that went out live.
+    Live,
+    Short,
+}
+
+/// A video of the channel.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Video {
     pub id: String,
     pub title: String,
     pub published_at: DateTime<Utc>,
-    /// Length in seconds; zero for live and upcoming videos.
+    /// Length in seconds; zero for lives that are still running and for upcoming videos.
     pub duration: u64,
+    pub kind: VideoKind,
 }
 
-/// A video plus the channel's average duration right after it was published.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VideoRecord {
-    pub id: String,
-    pub title: String,
-    pub published_at: DateTime<Utc>,
-    /// Length in seconds.
-    pub duration: u64,
-    /// Average length, in seconds, of every video published up to this one.
-    pub mean: f64,
-}
-
-/// Builds the channel history: videos in publication order, each with the
-/// running average duration up to and including it.
-pub fn build_series(videos: &[Video]) -> Vec<VideoRecord> {
+/// The videos the website shows, in order of publication: the ones that have a
+/// duration, each of them once.
+pub fn timeline(videos: &[Video]) -> Vec<Video> {
     let mut seen = HashSet::new();
-    let mut videos: Vec<&Video> = videos
+    let mut timeline: Vec<Video> = videos
         .iter()
         .filter(|video| video.duration > 0 && seen.insert(video.id.as_str()))
+        .cloned()
         .collect();
-    videos.sort_by(|a, b| (a.published_at, &a.id).cmp(&(b.published_at, &b.id)));
-
-    let mut total_duration = 0u64;
-    videos
-        .iter()
-        .enumerate()
-        .map(|(index, video)| {
-            total_duration += video.duration;
-            let mean = total_duration as f64 / (index + 1) as f64;
-            VideoRecord {
-                id: video.id.clone(),
-                title: video.title.clone(),
-                published_at: video.published_at,
-                duration: video.duration,
-                mean: (mean * 100.0).round() / 100.0,
-            }
-        })
-        .collect()
+    timeline.sort_by(|a, b| (a.published_at, &a.id).cmp(&(b.published_at, &b.id)));
+    timeline
 }
 
 #[cfg(test)]
@@ -69,69 +54,64 @@ mod tests {
             title: format!("Vídeo {id}"),
             published_at: day(day_of_month),
             duration,
+            kind: VideoKind::Video,
         }
     }
 
-    fn ids(records: &[VideoRecord]) -> Vec<&str> {
-        records.iter().map(|r| r.id.as_str()).collect()
-    }
-
-    fn means(records: &[VideoRecord]) -> Vec<f64> {
-        records.iter().map(|r| r.mean).collect()
+    fn ids(videos: &[Video]) -> Vec<&str> {
+        videos.iter().map(|video| video.id.as_str()).collect()
     }
 
     #[test]
-    fn computes_the_running_mean_in_publication_order() {
-        let series = build_series(&[video("a", 1, 100), video("b", 2, 200), video("c", 3, 600)]);
+    fn puts_the_videos_in_order_of_publication() {
+        let videos = timeline(&[video("c", 3, 600), video("a", 1, 100), video("b", 2, 200)]);
 
-        assert_eq!(ids(&series), ["a", "b", "c"]);
-        assert_eq!(means(&series), [100.0, 150.0, 300.0]);
+        assert_eq!(ids(&videos), ["a", "b", "c"]);
     }
 
     #[test]
-    fn sorts_by_publication_date_before_averaging() {
-        let series = build_series(&[video("c", 3, 600), video("a", 1, 100), video("b", 2, 200)]);
+    fn videos_published_at_the_same_time_keep_a_stable_order() {
+        let videos = timeline(&[video("b", 1, 200), video("a", 1, 100)]);
 
-        assert_eq!(ids(&series), ["a", "b", "c"]);
-        assert_eq!(means(&series), [100.0, 150.0, 300.0]);
+        assert_eq!(ids(&videos), ["a", "b"]);
     }
 
     #[test]
-    fn videos_without_duration_do_not_count_towards_the_mean() {
-        let series = build_series(&[video("a", 1, 100), video("live", 2, 0), video("b", 3, 200)]);
+    fn leaves_out_the_videos_without_a_duration() {
+        let videos = timeline(&[
+            video("a", 1, 100),
+            video("upcoming", 2, 0),
+            video("b", 3, 200),
+        ]);
 
-        assert_eq!(ids(&series), ["a", "b"]);
-        assert_eq!(means(&series), [100.0, 150.0]);
+        assert_eq!(ids(&videos), ["a", "b"]);
     }
 
     #[test]
     fn drops_duplicated_videos() {
-        let series = build_series(&[video("a", 1, 100), video("a", 1, 100), video("b", 2, 200)]);
+        let videos = timeline(&[video("a", 1, 100), video("a", 1, 100), video("b", 2, 200)]);
 
-        assert_eq!(ids(&series), ["a", "b"]);
-        assert_eq!(means(&series), [100.0, 150.0]);
+        assert_eq!(ids(&videos), ["a", "b"]);
     }
 
     #[test]
-    fn rounds_the_mean_to_two_decimal_places() {
-        let series = build_series(&[video("a", 1, 10), video("b", 2, 10), video("c", 3, 11)]);
+    fn keeps_what_each_video_is() {
+        let mut live = video("live", 2, 7200);
+        live.kind = VideoKind::Live;
 
-        assert_eq!(series[2].mean, 10.33);
+        let videos = timeline(&[live.clone(), video("a", 1, 100)]);
+
+        assert_eq!(videos, [video("a", 1, 100), live]);
     }
 
     #[test]
-    fn carries_the_video_data() {
-        let series = build_series(&[video("dQw4w9WgXcQ", 1, 212)]);
+    fn a_video_is_written_as_json_with_its_kind_in_lower_case() {
+        let mut short = video("s", 1, 30);
+        short.kind = VideoKind::Short;
 
         assert_eq!(
-            series,
-            [VideoRecord {
-                id: "dQw4w9WgXcQ".to_string(),
-                title: "Vídeo dQw4w9WgXcQ".to_string(),
-                published_at: day(1),
-                duration: 212,
-                mean: 212.0,
-            }]
+            serde_json::to_string(&short).unwrap(),
+            r#"{"id":"s","title":"Vídeo s","publishedAt":"2024-01-01T12:00:00Z","duration":30,"kind":"short"}"#
         );
     }
 }

@@ -15,10 +15,6 @@ fn youtube() -> ServerGuard {
         ("v2", "Segundo", "2024-02-01T12:00:00Z", "PT30M"),
         ("v1", "Primeiro", "2024-01-01T12:00:00Z", "PT20M"),
     ];
-    let ids: Vec<Value> = videos
-        .iter()
-        .map(|v| json!({"contentDetails": {"videoId": v.0}}))
-        .collect();
     let details: Vec<Value> = videos
         .iter()
         .map(|v| json!({"id": v.0, "snippet": {"title": v.1, "publishedAt": v.2}, "contentDetails": {"duration": v.3}}))
@@ -31,11 +27,28 @@ fn youtube() -> ServerGuard {
                 .to_string(),
         )
         .create();
-    youtube
-        .mock("GET", "/playlistItems")
-        .match_query(Matcher::Any)
-        .with_body(json!({"items": ids}).to_string())
-        .create();
+    let playlist = |ids: &[&str]| {
+        let items: Vec<Value> = ids
+            .iter()
+            .map(|id| json!({"contentDetails": {"videoId": id}}))
+            .collect();
+        json!({"items": items}).to_string()
+    };
+    // The uploads of the channel, and the playlists YouTube keeps with only its lives and only its shorts.
+    for (playlist_id, ids) in [
+        ("UUchannel", &["v3", "v2", "v1"][..]),
+        ("UULVchannel", &["v3"][..]),
+        ("UUSHchannel", &["v1"][..]),
+    ] {
+        youtube
+            .mock("GET", "/playlistItems")
+            .match_query(Matcher::UrlEncoded(
+                "playlistId".to_string(),
+                playlist_id.to_string(),
+            ))
+            .with_body(playlist(ids))
+            .create();
+    }
     youtube
         .mock("GET", "/videos")
         .match_query(Matcher::Any)
@@ -83,14 +96,13 @@ fn writes_the_data_of_the_site() {
     assert_eq!(
         data["videos"],
         json!([
-            {"id": "v1", "title": "Primeiro", "publishedAt": "2024-01-01T12:00:00Z", "duration": 1200, "mean": 1200.0},
-            {"id": "v2", "title": "Segundo", "publishedAt": "2024-02-01T12:00:00Z", "duration": 1800, "mean": 1500.0},
-            {"id": "v3", "title": "Terceiro", "publishedAt": "2024-03-01T12:00:00Z", "duration": 3600, "mean": 2200.0},
+            {"id": "v1", "title": "Primeiro", "publishedAt": "2024-01-01T12:00:00Z", "duration": 1200, "kind": "short"},
+            {"id": "v2", "title": "Segundo", "publishedAt": "2024-02-01T12:00:00Z", "duration": 1800, "kind": "video"},
+            {"id": "v3", "title": "Terceiro", "publishedAt": "2024-03-01T12:00:00Z", "duration": 3600, "kind": "live"},
         ])
     );
-    assert!(log(&output).contains("3 videos"), "{}", log(&output));
     assert!(
-        log(&output).contains("1 Pirulla = 36min:40s:000ms"),
+        log(&output).contains("Wrote 3 videos to site/data.json (regular: 1, lives: 1, shorts: 1)"),
         "{}",
         log(&output)
     );
