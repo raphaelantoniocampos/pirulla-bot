@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cotação do Pirulla</title>
+    <meta
+      name="description"
+      content="Quanto vale 1 Pirulla hoje? A duração média dos vídeos do canal do Pirulla, atualizada a cada vídeo novo, com gráficos interativos."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Cotação do Pirulla" />
+    <meta
+      property="og:description"
+      content="Quanto vale 1 Pirulla hoje? A duração média dos vídeos do canal do Pirulla, atualizada a cada vídeo novo."
+    />
+    <meta name="twitter:card" content="summary" />
+    <meta name="color-scheme" content="light dark" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232a78d6'/%3E%3Cpath d='M6 22l6-6 5 4 9-11' fill='none' stroke='%23fff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script type="module" src="app.js"></script>
+  </head>
+  <body>
+    <main>
+      <header class="masthead">
+        <h1>Cotação do Pirulla</h1>
+        <p class="lede">
+          O <strong>Pirulla</strong> é a unidade de tempo que equivale à duração média de todos os vídeos do
+          <a id="channel-link" href="https://www.youtube.com/" target="_blank" rel="noopener">canal do Pirulla</a>.
+          A cada vídeo novo, a cotação muda.
+        </p>
+      </header>
+
+      <p id="status" class="status" role="status" hidden></p>
+
+      <section class="card hero" aria-labelledby="hero-label">
+        <p id="hero-label" class="label">1 Pirulla vale hoje</p>
+        <p class="hero-value"><span id="rate">—</span> <span id="rate-ms" class="ms"></span></p>
+        <p id="delta" class="hero-delta"></p>
+        <p id="last-video" class="hero-note"></p>
+      </section>
+
+      <section class="tiles" aria-label="Números do canal">
+        <div class="card tile">
+          <p class="label">Vídeos no canal</p>
+          <p id="tile-count" class="tile-value">—</p>
+          <p id="tile-count-note" class="tile-note"></p>
+        </div>
+        <div class="card tile">
+          <p class="label">Tempo total publicado</p>
+          <p id="tile-total" class="tile-value">—</p>
+          <p id="tile-total-note" class="tile-note"></p>
+        </div>
+        <div class="card tile">
+          <p class="label">Vídeo mais longo</p>
+          <p id="tile-longest" class="tile-value">—</p>
+          <p id="tile-longest-note" class="tile-note"></p>
+        </div>
+      </section>
+
+      <div class="filters">
+        <span id="range-label" class="label">Período</span>
+        <div class="options" role="radiogroup" aria-labelledby="range-label">
+          <label><input type="radio" name="range" value="1" /><span>1 ano</span></label>
+          <label><input type="radio" name="range" value="5" /><span>5 anos</span></label>
+          <label><input type="radio" name="range" value="10" /><span>10 anos</span></label>
+          <label><input type="radio" name="range" value="all" checked /><span>Tudo</span></label>
+        </div>
+      </div>
+
+      <figure class="card">
+        <figcaption>
+          <h2>Cotação ao longo do tempo</h2>
+          <p>Duração média de todos os vídeos publicados até cada data.</p>
+        </figcaption>
+        <div id="rate-chart" class="chart"></div>
+        <p class="table-link"><a href="#videos">Ver como tabela</a></p>
+      </figure>
+
+      <figure class="card">
+        <figcaption>
+          <h2>Duração de cada vídeo</h2>
+          <p>Cada ponto é um vídeo. Com o mouse, clique em um ponto para abrir o vídeo no YouTube.</p>
+          <ul class="legend">
+            <li><span class="key dot s2"></span>Vídeo</li>
+            <li><span class="key line s1"></span>Cotação</li>
+          </ul>
+        </figcaption>
+        <div id="videos-chart" class="chart"></div>
+        <p class="table-link"><a href="#videos">Ver como tabela</a></p>
+      </figure>
+
+      <figure class="card">
+        <figcaption>
+          <h2 id="period-title">Duração média por ano</h2>
+          <p>Média dos vídeos publicados em cada período, sem acumular os anteriores.</p>
+        </figcaption>
+        <div id="period-chart" class="chart"></div>
+        <details>
+          <summary>Ver como tabela</summary>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Período</th>
+                  <th scope="col" class="num">Vídeos</th>
+                  <th scope="col" class="num">Duração média</th>
+                  <th scope="col" class="num">Tempo total</th>
+                </tr>
+              </thead>
+              <tbody id="period-rows"></tbody>
+            </table>
+          </div>
+        </details>
+      </figure>
+
+      <section id="videos" class="card" aria-labelledby="videos-title">
+        <h2 id="videos-title">Vídeos e o efeito de cada um na cotação</h2>
+        <div class="table-scroll">
+          <table class="stacks">
+            <thead>
+              <tr>
+                <th scope="col">Data</th>
+                <th scope="col">Vídeo</th>
+                <th scope="col" class="num">Duração</th>
+                <th scope="col" class="num">Cotação</th>
+                <th scope="col" class="num">Variação</th>
+              </tr>
+            </thead>
+            <tbody id="video-rows"></tbody>
+          </table>
+        </div>
+        <button id="more" class="more" type="button" hidden>Mostrar mais</button>
+      </section>
+
+      <footer>
+        <p id="updated"></p>
+        <p>
+          Dados da YouTube Data API. Site não oficial, sem vínculo com o canal.
+          <a href="https://github.com/raphaelantoniocampos/pirulla-bot" target="_blank" rel="noopener">Código no GitHub</a>.
+        </p>
+      </footer>
+    </main>
+  </body>
+</html>
