@@ -1,2 +1,3 @@
-__pycache__
 .env
+/target
+/site/data.json.tmp
