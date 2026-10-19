@@ -4,19 +4,10 @@ use std::path::Path;
 
 use anyhow::{Context, Result, bail};
 use chrono::{DateTime, SubsecRound, Utc};
-use serde::Serialize;
+pub use pirulla_core::data::SiteData;
 
-use crate::series::{Video, timeline};
+use crate::series::timeline;
 use crate::youtube::VideoSource;
-
-/// Everything the website shows.
-#[derive(Debug, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SiteData {
-    pub generated_at: DateTime<Utc>,
-    pub channel_id: String,
-    pub videos: Vec<Video>,
-}
 
 /// Reads the channel `channel_id` from `source` and writes the data file of the website to `output`.
 ///

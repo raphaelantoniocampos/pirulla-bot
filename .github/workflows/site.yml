@@ -19,24 +19,61 @@ concurrency:
   group: pages
   cancel-in-progress: false
 
+env:
+  # Trunk builds the website, and its release is checked against this checksum before it runs.
+  TRUNK_VERSION: 0.21.14
+  TRUNK_SHA256: f2b4680cd239693a646a2795e4633c625328d7b2a044fbe749fa3a2fe9e7036b
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      posts: ${{ steps.announcements.outputs.posts }}
     steps:
       - uses: actions/checkout@v7
+      - name: Install what builds the website
+        run: |
+          rustup target add wasm32-unknown-unknown
+          curl --silent --show-error --fail --location --output "$RUNNER_TEMP/trunk.tar.gz" \
+            "https://github.com/trunk-rs/trunk/releases/download/v$TRUNK_VERSION/trunk-x86_64-unknown-linux-gnu.tar.gz"
+          echo "$TRUNK_SHA256  $RUNNER_TEMP/trunk.tar.gz" | sha256sum --check --quiet
+          tar --extract --gzip --file "$RUNNER_TEMP/trunk.tar.gz" --directory "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - uses: Swatinem/rust-cache@v2
       - name: Test
         if: github.event_name != 'schedule'
-        run: |
-          cargo test --locked
-          npm test
+        run: cargo test --locked
       # When this fails nothing is published, and the site keeps the data it had.
       - name: Read the channel and write site/data.json
         run: cargo run --release --locked
         env:
           DEVELOPER_KEY: ${{ secrets.YOUTUBE_DEVELOPER_KEY }}
           CHANNEL_ID: ${{ secrets.CHANNEL_ID }}
+      - id: pages
+        uses: actions/configure-pages@v6
+      # The videos in the data on master have been seen already. It is read from master as it is now, not from the
+      # commit this run started from, which a run that finished while this one was waiting may have left behind.
+      - name: Find the new videos to announce
+        id: announcements
+        env:
+          SITE_URL: ${{ steps.pages.outputs.base_url }}/
+        run: |
+          git fetch --quiet origin master
+          git show FETCH_HEAD:site/data.json > "$RUNNER_TEMP/previous.json"
+          posts=$(cargo run --release --locked --bin announce -- compose "$RUNNER_TEMP/previous.json" site/data.json "$SITE_URL")
+          printf 'posts=%s\n' "$posts" >> "$GITHUB_OUTPUT"
+      - name: Build the website
+        working-directory: site
+        run: trunk build --release --locked
+      # Its own tests, and the website just built used in Chrome, which the runner has.
+      - name: Test the website
+        if: github.event_name != 'schedule'
+        run: cargo test --locked -p pirulla-site
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site/dist
       # Committed when the videos change, not on every run: the time of generation is left out of the comparison.
+      # Last, so that the new videos count as seen only when everything else worked and they will be announced.
       - name: Keep the history of the data
         run: |
           previous=$(git show HEAD:site/data.json 2>/dev/null | grep -v '^"generatedAt":' || true)
@@ -50,10 +87,6 @@ jobs:
           git add site/data.json
           git commit --quiet -m "Update the channel data"
           git push --quiet || { git pull --quiet --rebase && git push --quiet; }
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
-        with:
-          path: site
 
   deploy:
     needs: build
@@ -64,3 +97,24 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v5
+
+  # After the deployment, so that the site already shows the new videos when the post goes out. Even when the
+  # deployment fails, though: the videos count as seen by then, and the next run will not find them again. A failure
+  # here is not retried either; re-run this job, or post with the button of the page.
+  # Off unless the repository variable X_POSTING is "on"; the build still shows what it would post.
+  announce:
+    needs: [build, deploy]
+    if: ${{ !cancelled() && vars.X_POSTING == 'on' && needs.build.result == 'success' && needs.build.outputs.posts != '[]' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: Post the new videos on X
+        run: cargo run --locked --bin announce -- post
+        env:
+          POSTS: ${{ needs.build.outputs.posts }}
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+          ACCESS_SECRET_TOKEN: ${{ secrets.ACCESS_SECRET_TOKEN }}

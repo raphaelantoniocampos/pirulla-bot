@@ -1,0 +1,38 @@
+[package]
+name = "pirulla-site"
+version = "3.0.0"
+edition = "2024"
+description = "The website of Pirulla Bot: the value of 1 Pirulla and its charts, in the browser."
+publish = false
+
+[dependencies]
+console_error_panic_hook = "0.1.7"
+js-sys = "0.3.106"
+leptos = { version = "0.8.22", features = ["csr"] }
+pirulla-core = { path = "../core" }
+serde_json = "1.0.154"
+wasm-bindgen = "0.2.129"
+wasm-bindgen-futures = "0.4.79"
+web-sys = { version = "0.3.106", features = [
+  "Clipboard",
+  "DomRect",
+  "EventTarget",
+  "HtmlDialogElement",
+  "HtmlTextAreaElement",
+  "KeyboardEvent",
+  "Location",
+  "Navigator",
+  "Node",
+  "PointerEvent",
+  "RequestCache",
+  "RequestInit",
+  "ResizeObserver",
+  "Response",
+  "Url",
+  "Window",
+] }
+
+[dev-dependencies]
+# Drives Chrome in the tests of the page, without a WebDriver server.
+headless_chrome = "1.0.22"
+chrono = { version = "0.4.45", default-features = false, features = ["std"] }

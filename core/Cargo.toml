@@ -1,0 +1,14 @@
+[package]
+name = "pirulla-core"
+version = "3.0.0"
+edition = "2024"
+description = "What the bot and the website of Pirulla Bot share: the data, the average, how numbers are written in Portuguese and the post that announces a video."
+
+[dependencies]
+chrono = { version = "0.4.45", default-features = false, features = ["serde", "std"] }
+chrono-tz = { version = "0.10.4", default-features = false }
+percent-encoding = "2.3.2"
+serde = { version = "1.0.229", features = ["derive"] }
+
+[dev-dependencies]
+serde_json = "1.0.154"

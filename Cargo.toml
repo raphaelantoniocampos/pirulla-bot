@@ -2,19 +2,39 @@
 name = "pirulla-bot"
 version = "3.0.0"
 edition = "2024"
-description = "Tracks the average length of the videos of the Pirulla YouTube channel and publishes it as a website."
+description = "Tracks the average length of the videos of the Pirulla YouTube channel, publishes it as a website and announces its new videos on X."
 readme = "README.md"
+# The generator; the other binary, announce, posts on X.
+default-run = "pirulla-bot"
 
 [dependencies]
 anyhow = "1.0.104"
+base64 = "0.23.1"
 chrono = { version = "0.4.45", features = ["serde"] }
 dotenvy = "0.15.7"
 env_logger = "0.11.11"
+fastrand = "2.5.0"
+hmac = "0.13.0"
 log = "0.4.34"
+percent-encoding = "2.3.2"
+pirulla-core = { path = "core" }
 reqwest = { version = "0.13.5", default-features = false, features = ["blocking", "json", "rustls", "query"] }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
+sha1 = "0.11.0"
 
 [dev-dependencies]
 mockito = "1.7.2"
 tempfile = "3.27.0"
+
+[workspace]
+members = ["core", "site"]
+# The website is built for the browser, by trunk.
+default-members = [".", "core"]
+
+# Small and fast to download, for the website.
+[profile.wasm-release]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1

@@ -1,0 +1,7 @@
+[build]
+target = "index.html"
+dist = "dist"
+# Relative addresses, since GitHub Pages serves the site from a directory.
+public_url = "./"
+# Small and fast to download.
+cargo_profile = "wasm-release"

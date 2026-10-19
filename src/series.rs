@@ -1,30 +1,6 @@
 use std::collections::HashSet;
 
-use chrono::{DateTime, Utc};
-use serde::Serialize;
-
-/// What YouTube lists a video as.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum VideoKind {
-    /// A regular upload.
-    Video,
-    /// A broadcast that went out live.
-    Live,
-    Short,
-}
-
-/// A video of the channel.
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Video {
-    pub id: String,
-    pub title: String,
-    pub published_at: DateTime<Utc>,
-    /// Length in seconds; zero for lives that are still running and for upcoming videos.
-    pub duration: u64,
-    pub kind: VideoKind,
-}
+pub use pirulla_core::data::{Video, VideoKind};
 
 /// The videos the website shows, in order of publication: the ones that have a
 /// duration, each of them once.
@@ -42,7 +18,7 @@ pub fn timeline(videos: &[Video]) -> Vec<Video> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use chrono::TimeZone;
+    use chrono::{DateTime, TimeZone, Utc};
 
     fn day(n: u32) -> DateTime<Utc> {
         Utc.with_ymd_and_hms(2024, 1, n, 12, 0, 0).unwrap()
@@ -102,16 +78,5 @@ mod tests {
         let videos = timeline(&[live.clone(), video("a", 1, 100)]);
 
         assert_eq!(videos, [video("a", 1, 100), live]);
-    }
-
-    #[test]
-    fn a_video_is_written_as_json_with_its_kind_in_lower_case() {
-        let mut short = video("s", 1, 30);
-        short.kind = VideoKind::Short;
-
-        assert_eq!(
-            serde_json::to_string(&short).unwrap(),
-            r#"{"id":"s","title":"Vídeo s","publishedAt":"2024-01-01T12:00:00Z","duration":30,"kind":"short"}"#
-        );
     }
 }
